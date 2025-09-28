@@ -1,42 +1,32 @@
 import React from "react";
-import { MarketDataPoint } from "./MockChart"; // or wherever you defined the interface
 
-interface AlertsPanelProps {
-  marketData: Record<string, MarketDataPoint[]>;
-  selectedMarkets: string[];
+interface Alert {
+  market: string;
+  date: string;
+  message: string;
 }
 
-const AlertsPanel: React.FC<AlertsPanelProps> = ({ marketData, selectedMarkets }) => {
-  // Collect all alerts for selected markets
-  const alerts: string[] = [];
+interface Props {
+  alerts: Alert[];
+}
 
-  selectedMarkets.forEach((market) => {
-    const data = marketData[market];
-    if (!data) return;
-
-    data.forEach((point) => {
-      if (point.alerts && point.alerts.length > 0) {
-        point.alerts.forEach((alert) => {
-          alerts.push(`[${market} - ${point.date}]: ${alert}`);
-        });
-      }
-    });
-  });
-
-  if (alerts.length === 0) return <p>No alerts at this time.</p>;
+function AlertsPanel({ alerts }: Props) {
+  if (!alerts || alerts.length === 0) {
+    return <div>No alerts for current selection.</div>;
+  }
 
   return (
-    <div style={{ marginTop: "1rem", padding: "1rem", border: "1px solid #ccc", borderRadius: "8px" }}>
+    <div style={{ border: "1px solid #ccc", padding: "1rem" }}>
       <h3>Market Alerts</h3>
       <ul>
-        {alerts.map((alert, idx) => (
-          <li key={idx} style={{ marginBottom: "0.5rem" }}>
-            {alert}
+        {alerts.map((a, idx) => (
+          <li key={idx}>
+            <strong>{a.market}</strong> ({a.date}): {a.message}
           </li>
         ))}
       </ul>
     </div>
   );
-};
+}
 
 export default AlertsPanel;
