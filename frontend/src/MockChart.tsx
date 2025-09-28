@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, Dispatch, SetStateAction } from "react";
 import axios from "axios";
 import {
   Chart as ChartJS,
@@ -22,7 +22,7 @@ ChartJS.register(
   Tooltip
 );
 
-interface MarketDataPoint {
+export interface MarketDataPoint {
   date: string;
   specLong: number;
   specShort: number;
@@ -30,13 +30,25 @@ interface MarketDataPoint {
   alerts?: string[];
 }
 
-function MockChart() {
-  const [markets, setMarkets] = useState<string[]>([]);
-  const [selectedMarkets, setSelectedMarkets] = useState<string[]>([]);
-  const [marketData, setMarketData] = useState<Record<string, MarketDataPoint[]>>({});
-  const [loadingMarkets, setLoadingMarkets] = useState<Set<string>>(new Set());
+interface MockChartProps {
+  markets: string[];
+  setMarkets: Dispatch<SetStateAction<string[]>>;
+  selectedMarkets: string[];
+  setSelectedMarkets: Dispatch<SetStateAction<string[]>>;
+  marketData: Record<string, MarketDataPoint[]>;
+  setMarketData: Dispatch<SetStateAction<Record<string, MarketDataPoint[]>>>;
+}
 
-  // Fetch available markets on mount
+const MockChart: React.FC<MockChartProps> = ({
+  markets,
+  setMarkets,
+  selectedMarkets,
+  setSelectedMarkets,
+  marketData,
+  setMarketData,
+}) => {
+  const [loadingMarkets, setLoadingMarkets] = React.useState<Set<string>>(new Set());
+
   useEffect(() => {
     axios.get("http://127.0.0.1:8000/markets").then((res) => {
       setMarkets(res.data.markets);
@@ -44,9 +56,8 @@ function MockChart() {
         setSelectedMarkets([res.data.markets[0]]);
       }
     });
-  }, []);
+  }, [setMarkets, setSelectedMarkets]);
 
-  // Fetch data for selected markets
   useEffect(() => {
     const fetchMarkets = async () => {
       const marketsToLoad = selectedMarkets.filter(
@@ -64,8 +75,6 @@ function MockChart() {
         marketsToLoad.map(async (market) => {
           try {
             const res = await axios.get(`http://127.0.0.1:8000/data/${market}`);
-            console.log("Fetched market data:", market, res.data);
-            // Backend returns array directly
             setMarketData((prev) => ({ ...prev, [market]: res.data }));
           } catch (err) {
             console.error("Failed to fetch market:", market, err);
@@ -81,7 +90,7 @@ function MockChart() {
     };
 
     fetchMarkets();
-  }, [selectedMarkets]);
+  }, [selectedMarkets, marketData, loadingMarkets, setMarketData]);
 
   const toggleMarket = (market: string) => {
     setSelectedMarkets((prev) =>
@@ -92,10 +101,8 @@ function MockChart() {
   const firstMarket = selectedMarkets.length > 0 ? selectedMarkets[0] : undefined;
   const firstMarketData = firstMarket ? marketData[firstMarket] : undefined;
 
-  // Show loading if no data yet
   if (!firstMarketData) return <p>Loading chart...</p>;
 
-  // Build combined data
   const combinedData = firstMarketData.map((_, i) => {
     let specLong = 0;
     let specShort = 0;
@@ -113,7 +120,6 @@ function MockChart() {
     return { date: firstMarketData[i].date, specLong, specShort: -specShort, prices };
   });
 
-  // Build chart datasets
   const datasets: any[] = [
     {
       type: "bar" as const,
@@ -166,24 +172,13 @@ function MockChart() {
       },
     },
     scales: {
-      y: {
-        type: "linear" as const,
-        position: "left" as const,
-        title: { display: true, text: "Positions" },
-        stacked: true,
-      },
-      y1: {
-        type: "linear" as const,
-        position: "right" as const,
-        title: { display: true, text: "Price" },
-        grid: { drawOnChartArea: false },
-      },
+      y: { type: "linear" as const, position: "left" as const, stacked: true },
+      y1: { type: "linear" as const, position: "right" as const, grid: { drawOnChartArea: false } },
     },
   };
 
   return (
     <div>
-      <h2>Market Positioning</h2>
       <div>
         {markets.map((market) => (
           <label key={market} style={{ marginRight: "1rem" }}>
@@ -199,9 +194,10 @@ function MockChart() {
       <ChartJSReact type="bar" data={data} options={options} />
     </div>
   );
-}
+};
 
 export default MockChart;
+
 
 
 
