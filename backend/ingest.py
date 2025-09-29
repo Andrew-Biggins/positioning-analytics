@@ -1,10 +1,10 @@
-from datetime import datetime
 import yfinance as yf
 from sqlalchemy import create_engine, Table, MetaData
 from sqlalchemy.orm import sessionmaker
+from db import DATABASE_URL
 
 # Setup SQLAlchemy
-engine = create_engine("postgresql+psycopg2://postgres:ilikechipsandpeas@localhost:5432/markets")
+engine = create_engine(DATABASE_URL)
 Session = sessionmaker(bind=engine)
 session = Session()
 metadata = MetaData()
@@ -13,38 +13,25 @@ metadata = MetaData()
 markets_table = Table("markets", metadata, autoload_with=engine)
 prices_table = Table("prices", metadata, autoload_with=engine)
 
-# Example markets list
-markets = [
-    {"name": "Gold", "symbol": "GC=F"},
-    {"name": "Silver", "symbol": "SI=F"},
-    {"name": "Bitcoin", "symbol": "BTC-USD"},
-]
+# Get all markets
+markets = session.execute(markets_table.select()).fetchall()
 
 for market in markets:
-    # Ensure market exists
-    market_row = session.execute(
-        markets_table.select().where(markets_table.c.name == market["name"])
-    ).first()
+    ticker = market.symbol
+    market_id = market.id
 
-    if not market_row:
-        market_id = session.execute(
-            markets_table.insert().values(
-                name=market["name"],
-                symbol=market["symbol"]
-            )
-        ).scalar()
-    else:
-        market_id = market_row.id
+    # Fetch last 30 days of daily prices
+    data = yf.Ticker(ticker).history(period="30d", interval="1d")
 
-    # Get latest price from Yahoo Finance
-    data = yf.download(market["symbol"], period="1d", interval="1m")
-    if not data.empty:
-        price = float(data["Close"].iloc[-1])  # <-- convert np.float64 to float
+    for date, row in data.iterrows():
+        price = float(row['Close'])  # convert to native Python float
+        timestamp = datetime.combine(date.date(), datetime.min.time())
+
         session.execute(
             prices_table.insert().values(
                 market_id=market_id,
                 price=price,
-                timestamp=datetime.utcnow()
+                timestamp=timestamp
             )
         )
 

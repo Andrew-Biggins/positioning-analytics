@@ -34,7 +34,7 @@ def root():
 
 @app.get("/markets")
 def get_markets(db: Session = Depends(get_db)):
-    markets = db.query(models.Price.market).distinct().all()
+    markets = db.query(models.Price.market_id).distinct().all()
     return {"markets": [m[0] for m in markets]}
 
 
@@ -42,8 +42,8 @@ def get_markets(db: Session = Depends(get_db)):
 def get_market_data(market: str, db: Session = Depends(get_db)):
     # Case-insensitive lookup
     market_row = (
-        db.query(models.Price.market)
-        .filter(models.Price.market.ilike(market))
+        db.query(models.Price.market_id)
+        .filter(models.Price.market_id == market)
         .first()
     )
     if not market_row:
@@ -51,15 +51,15 @@ def get_market_data(market: str, db: Session = Depends(get_db)):
 
     prices = (
         db.query(models.Price)
-        .filter(models.Price.market.ilike(market))
-        .order_by(models.Price.date)
+        .filter(models.Price.market_id == market)
+        .order_by(models.Price.timestamp)
         .all()
     )
 
     return [
         {
-            "date": p.date.isoformat(),
-            "price": p.close,
+            "date": p.timestamp.isoformat(),
+            "price": p.price,
             "alerts": [],  # placeholder: we'll rewire Python alert logic later
         }
         for p in prices

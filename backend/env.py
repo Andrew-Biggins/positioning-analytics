@@ -1,0 +1,1 @@
+DATABASE_URL = "postgresql+psycopg2://postgres:ilikechipsandpeas@localhost:5432/markets"
