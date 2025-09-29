@@ -93,10 +93,16 @@ const MockChart: React.FC<MockChartProps> = ({
   }, [selectedMarkets, marketData, loadingMarkets, setMarketData]);
 
   const toggleMarket = (market: string) => {
-    setSelectedMarkets((prev) =>
-      prev.includes(market) ? prev.filter((m) => m !== market) : [...prev, market]
-    );
-  };
+  setSelectedMarkets((prev) => {
+    if (prev.includes(market)) {
+      // don’t allow removing the last one
+      if (prev.length === 1) return prev;
+      return prev.filter((m) => m !== market);
+    } else {
+      return [...prev, market];
+    }
+  });
+};
 
   const firstMarket = selectedMarkets.length > 0 ? selectedMarkets[0] : undefined;
   const firstMarketData = firstMarket ? marketData[firstMarket] : undefined;

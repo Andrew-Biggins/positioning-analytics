@@ -34,24 +34,24 @@ def root():
 
 @app.get("/markets")
 def get_markets(db: Session = Depends(get_db)):
-    markets = db.query(models.Price.market_id).distinct().all()
+    markets = db.query(models.Market.name).distinct().all()
     return {"markets": [m[0] for m in markets]}
 
 
-@app.get("/data/{market}")
-def get_market_data(market: str, db: Session = Depends(get_db)):
-    # Case-insensitive lookup
+@app.get("/data/{market_name}")
+def get_market_data(market_name: str, db: Session = Depends(get_db)):
+    # Find market row by name (case-insensitive if you like)
     market_row = (
-        db.query(models.Price.market_id)
-        .filter(models.Price.market_id == market)
+        db.query(models.Market)
+        .filter(models.Market.name.ilike(market_name))
         .first()
     )
     if not market_row:
-        raise HTTPException(status_code=404, detail=f"Market '{market}' not found")
+        raise HTTPException(status_code=404, detail=f"Market '{market_name}' not found")
 
     prices = (
         db.query(models.Price)
-        .filter(models.Price.market_id == market)
+        .filter(models.Price.market_id == market_row.id)
         .order_by(models.Price.timestamp)
         .all()
     )
@@ -60,7 +60,7 @@ def get_market_data(market: str, db: Session = Depends(get_db)):
         {
             "date": p.timestamp.isoformat(),
             "price": p.price,
-            "alerts": [],  # placeholder: we'll rewire Python alert logic later
+            "alerts": [],
         }
         for p in prices
     ]
