@@ -9,12 +9,12 @@ The goal is to highlight when markets are extended or crowded, and generate insi
 
 ## 🚀 Tech Stack
 - **Frontend**: React + TypeScript (UI & charts)
-- **Backend (planned)**: Python (data processing, analytics, ML experiments)
+- **Backend**: Python (data processing, analytics, ML experiments)
 - **Hosting (planned)**: AWS
 
 ## 📌 Roadmap
 - [x] Setup React + TypeScript project
-- [ ] Display mock charts (sample positioning data)
+- [x] Display mock charts (sample positioning data)
 - [ ] Add custom chart combinations (e.g. Gold + Silver)
 - [ ] Integrate technical analysis overlays (moving averages, ATR, etc.)
 - [ ] Build backend to fetch & process COT data

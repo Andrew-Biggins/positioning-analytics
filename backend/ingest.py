@@ -1,44 +1,54 @@
+# ingest.py
 import yfinance as yf
-from sqlalchemy import create_engine, Table, MetaData
-from sqlalchemy.orm import sessionmaker
-from .db import DATABASE_URL
-from datetime import datetime
+from sqlalchemy.orm import Session
+from .db import SessionLocal
+from .models import Price, Market
 
-# Setup SQLAlchemy
-engine = create_engine(DATABASE_URL)
-Session = sessionmaker(bind=engine)
-session = Session()
-metadata = MetaData()
+# List of markets to ingest
+MARKETS = [("BTC-USD", "Bitcoin"), ("GC=F","Gold")]  # extend as needed
 
-# Reflect existing tables
-markets_table = Table("markets", metadata, autoload_with=engine)
-prices_table = Table("prices", metadata, autoload_with=engine)
+def fetch_and_store_market_data(session: Session, market: tuple):
+    ticker, name = market
+    print(f"Fetching data for {name}...")
 
-# Get all markets
-markets = session.execute(markets_table.select()).fetchall()
+    market_obj = session.query(Market).filter(Market.symbol == ticker).first()
 
-for market in markets:
-    ticker = market.symbol
-    market_id = market.id
-
-    # Fetch last 30 days of daily prices
-    data = yf.Ticker(ticker).history(period="30d", interval="1d")
-
+    if not market_obj:
+        market_obj = Market(name=name, symbol=ticker)
+        session.add(market_obj)
+        session.commit()  # commit so it gets an ID
+    
+    # Download historical data from yfinance
+    data = yf.download(ticker, start="2023-01-01", end="2023-12-31")
+    
     for date, row in data.iterrows():
-        price = float(row['Close'])  # convert to native Python float
-        timestamp = datetime.combine(date.date(), datetime.min.time())
-
-        session.execute(
-            prices_table.insert().values(
-                market_id=market_id,
-                price=price,
-                timestamp=timestamp
-            )
+        price_entry = Price(
+            market_id=market_obj.id,
+            timestamp=date,
+            price = row["Close"].item()
         )
+        session.add(price_entry)
+    
+    print(f"Stored {len(data)} rows for {market}.")
 
-# Commit all changes
-session.commit()
-session.close()
+def main():
+    # Create a session
+    session = SessionLocal()
+    
+    try:
+        for market in MARKETS:
+            fetch_and_store_market_data(session, market)
+        session.commit()
+        print("All data committed successfully.")
+    except Exception as e:
+        session.rollback()
+        print("Error occurred, rolling back:", e)
+    finally:
+        session.close()
+
+if __name__ == "__main__":
+    main()
+
 
 
 
