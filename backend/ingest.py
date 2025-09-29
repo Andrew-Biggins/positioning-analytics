@@ -1,7 +1,8 @@
 import yfinance as yf
 from sqlalchemy import create_engine, Table, MetaData
 from sqlalchemy.orm import sessionmaker
-from db import DATABASE_URL
+from .db import DATABASE_URL
+from datetime import datetime
 
 # Setup SQLAlchemy
 engine = create_engine(DATABASE_URL)
