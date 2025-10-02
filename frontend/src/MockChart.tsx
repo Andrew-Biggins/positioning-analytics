@@ -104,26 +104,39 @@ const MockChart: React.FC<MockChartProps> = ({
   });
 };
 
-  const firstMarket = selectedMarkets.length > 0 ? selectedMarkets[0] : undefined;
-  const firstMarketData = firstMarket ? marketData[firstMarket] : undefined;
+  // Find the market with the most data points
+  let marketWithMostData = selectedMarkets[0];
+  selectedMarkets.forEach((market) => {
+    if (marketData[market] && marketData[market].length > marketData[marketWithMostData]?.length) {
+      marketWithMostData = market;
+    }
+  });
+
+  const firstMarketData = marketData[marketWithMostData];
 
   if (!firstMarketData) return <p>Loading chart...</p>;
 
-  const combinedData = firstMarketData.map((_, i) => {
-    let specLong = 0;
-    let specShort = 0;
-    const prices: Record<string, number> = {};
+  const allDates = Array.from(
+  new Set(
+    selectedMarkets.flatMap((m) => marketData[m]?.map((d) => d.date) || [])
+  )
+).sort(); // ensure chronological order
 
-    selectedMarkets.forEach((m) => {
-      const point = marketData[m]?.[i];
-      if (point) {
-        specLong += point.specLong;
-        specShort += point.specShort;
-        prices[m] = point.price;
-      }
-    });
+const combinedData = allDates.map((date) => {
+  let specLong = 0;
+  let specShort = 0;
+  const prices: Record<string, number> = {};
 
-    return { date: firstMarketData[i].date, specLong, specShort: -specShort, prices };
+  selectedMarkets.forEach((m) => {
+    const point = marketData[m]?.find((d) => d.date === date);
+    if (point) {
+      specLong += point.specLong;
+      specShort += point.specShort;
+      prices[m] = point.price;
+    }
+  });
+
+  return { date, specLong, specShort: -specShort, prices };
   });
 
   const datasets: any[] = [
@@ -178,8 +191,22 @@ const MockChart: React.FC<MockChartProps> = ({
       },
     },
     scales: {
-      y: { type: "linear" as const, position: "left" as const, stacked: true },
-      y1: { type: "linear" as const, position: "right" as const, grid: { drawOnChartArea: false } },
+      y: {
+        type: "linear" as const,
+        position: "left" as const,
+        stacked: false,
+      },
+      y1: {
+        type: "linear" as const,
+        position: "right" as const,
+        grid: {
+          drawOnChartArea: false,
+        },
+      },
+      x: {
+        type: 'category' as const,
+        labels: combinedData.map((d) => d.date),
+      }
     },
   };
 
@@ -203,7 +230,3 @@ const MockChart: React.FC<MockChartProps> = ({
 };
 
 export default MockChart;
-
-
-
-

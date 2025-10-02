@@ -3,15 +3,16 @@ import yfinance as yf
 from sqlalchemy.orm import Session
 from .db import SessionLocal
 from .models import Price, Market
+from backend.utils.markets import resolve_market
 
 # List of markets to ingest
-MARKETS = [("BTC-USD", "Bitcoin"), ("GC=F","Gold")]  # extend as needed
+MARKETS = [("BTC-USD", "Bitcoin"), ("GC=F","Gold"), ("XRP-USD","XRP")]  # extend as needed
 
 def fetch_and_store_market_data(session: Session, market: tuple):
     ticker, name = market
     print(f"Fetching data for {name}...")
 
-    market_obj = session.query(Market).filter(Market.symbol == ticker).first()
+    market_obj = resolve_market(session, "yahoo", ticker, canonical_name=name)
 
     if not market_obj:
         market_obj = Market(name=name, symbol=ticker)
@@ -19,7 +20,10 @@ def fetch_and_store_market_data(session: Session, market: tuple):
         session.commit()  # commit so it gets an ID
     
     # Download historical data from yfinance
-    data = yf.download(ticker, start="2023-01-01", end="2023-12-31")
+    data = yf.download(ticker, start="2023-01-01", end="2025-09-30")
+
+    print(data.shape)
+    print(data.head(1).T)
     
     for date, row in data.iterrows():
         price_entry = Price(

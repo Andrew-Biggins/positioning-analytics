@@ -25,25 +25,25 @@ function MarketDashboard() {
   }, []);
 
   // Fetch alerts (optionally filtered by selected markets)
-  useEffect(() => {
-    if (selectedMarkets.length === 0) return;
+  // useEffect(() => {
+  //   if (selectedMarkets.length === 0) return;
 
-    axios
-      .get("http://127.0.0.1:8000/alerts", {
-        params: { markets: selectedMarkets },
-        paramsSerializer: (params) => {
-          // ensure multiple markets serialize properly ?markets=Gold&markets=Silver
-          return (params.markets as string[])
-            .map((m) => `markets=${encodeURIComponent(m)}`)
-            .join("&");
-        },
-      })
-      .then((res) => setAlerts(res.data.alerts))
-      .catch((err) => {
-        console.error("Failed to fetch alerts", err);
-        setAlerts([]);
-      });
-  }, [selectedMarkets]);
+  //   axios
+  //     .get("http://127.0.0.1:8000/alerts", {
+  //       params: { markets: selectedMarkets },
+  //       paramsSerializer: (params) => {
+  //         // ensure multiple markets serialize properly ?markets=Gold&markets=Silver
+  //         return (params.markets as string[])
+  //           .map((m) => `markets=${encodeURIComponent(m)}`)
+  //           .join("&");
+  //       },
+  //     })
+  //     .then((res) => setAlerts(res.data.alerts))
+  //     .catch((err) => {
+  //       console.error("Failed to fetch alerts", err);
+  //       setAlerts([]);
+  //     });
+  // }, [selectedMarkets]);
 
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
@@ -55,7 +55,7 @@ function MarketDashboard() {
         marketData={marketData}
         setMarketData={setMarketData}
       />
-      <AlertsPanel alerts={alerts} />
+      {/* <AlertsPanel alerts={alerts} /> */}
     </div>
   );
 }

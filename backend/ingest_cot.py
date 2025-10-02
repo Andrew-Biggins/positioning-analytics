@@ -3,13 +3,10 @@ import io
 import zipfile
 import pandas as pd
 from sqlalchemy.orm import Session
-from datetime import datetime
 from .db import SessionLocal, engine, Base
 from . import models
-
-import zipfile
-import io
-import pandas as pd
+from .utils.markets import resolve_market
+from .utils.cot_mapping import COT_TO_CANONICAL
 
 def clean_columns(df):
     df.columns = (
@@ -56,15 +53,15 @@ def ingest_cot():
     try:
         for _, row in df.iterrows():
             market_name = row["Market_and_Exchange_Names"].strip()
+            canonical_name = COT_TO_CANONICAL.get(market_name, market_name)
+            symbol = row["CFTC_Contract_Market_Code_Quotes"]
 
-            # Temporary hack: use name as symbol
-            market = db.query(models.Market).filter_by(name=market_name).first()
+            market = resolve_market(db, "cot", market_name, canonical_name=canonical_name)
             if not market:
-                market = models.Market(name=market_name, symbol=row["CFTC_Contract_Market_Code_Quotes"])  # <- using name as placeholder symbol
+                market = models.Market(name=market_name, symbol=symbol)  
                 db.add(market)
-                db.flush()  # so market.id is available
+                db.flush() 
 
-            # Create a COTReport entry using only the fields in your model
             report = models.COTReport(
                 market_id=market.id,
                 report_date=pd.to_datetime(row["As_of_Date_in_Form_YYYY_MM_DD"]),
