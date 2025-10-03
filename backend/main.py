@@ -20,8 +20,8 @@ Base.metadata.create_all(bind=engine)
 
 # backend/mappings.py
 MARKET_MAPPING = {
-    "Gold": "XAUUSD",
-    "Bitcoin": "BTCUSD",
+    "XAU": "XAUUSD",
+    "BTC": "BTCUSD",
     "XRP": "XRP-USD"
 }
 
@@ -39,7 +39,7 @@ def root():
 
 @app.get("/markets")
 def get_markets(db: Session = Depends(get_db)):
-    markets = db.query(models.Market.name).filter(models.Market.name.in_(MARKET_MAPPING.keys())).all()
+    markets = db.query(models.Market.name).filter(models.Market.symbol.in_(MARKET_MAPPING.keys())).all()
     return {"markets": [m[0] for m in markets]}
 
 @app.get("/data/{market_name}")

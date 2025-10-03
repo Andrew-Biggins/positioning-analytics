@@ -1,5 +1,3 @@
-import React from "react";
-import MockChart from "./MockChart";
 import MarketDashboard from "./MarketDashboard";
 
 function App() {
@@ -12,4 +10,3 @@ function App() {
 }
 
 export default App;
-

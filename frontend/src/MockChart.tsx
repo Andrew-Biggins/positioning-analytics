@@ -158,19 +158,32 @@ const combinedData = allDates.map((date) => {
     },
   ];
 
-  selectedMarkets.forEach((m) => {
+  const lineColors = [
+  "#4363d8", // blue
+  "#f58231", // orange
+  "#911eb4", // purple
+  "#46f0f0", // cyan
+  "#f032e6", // magenta
+  "#bcf60c", // lime
+  "#fabebe", // pink
+  "#008080", // teal
+  "#e6beff", // lavender
+  "#9a6324", // brown
+  "#fffac8", // cream
+  "#800000", // maroon
+  "#aaffc3", // mint
+  "#808000", // olive
+  "#ffd8b1", // apricot
+  "#000075", // navy
+  "#808080", // gray
+  ];
+
+  selectedMarkets.forEach((m, i) => {
     datasets.push({
       type: "line" as const,
       label: `${m} Price`,
       data: combinedData.map((d) => d.prices[m]),
-      borderColor:
-        m === "Gold"
-          ? "gold"
-          : m === "Silver"
-          ? "silver"
-          : m === "Bitcoin"
-          ? "orange"
-          : "blue",
+      borderColor: lineColors[i % lineColors.length],
       backgroundColor: "transparent",
       yAxisID: "y1",
     });
