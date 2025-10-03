@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from .db import SessionLocal, engine, Base
 from . import models
 from .utils.markets import resolve_market
-from .utils.cot_mapping import COT_TO_CANONICAL
+from .utils.market_mapping import COT_TO_CANONICAL
 
 def clean_columns(df):
     df.columns = (
@@ -35,16 +35,9 @@ def download_cot_file() -> pd.DataFrame:
     print(df.shape)
     print(df.head(1).T)
 
-
-
-
-    # Clean headers
-    #df = clean_columns(df)
     return df
 
-
-
-def ingest_cot():
+def ingest_cot(): 
     Base.metadata.create_all(bind=engine)
 
     df = download_cot_file()
@@ -54,13 +47,16 @@ def ingest_cot():
         for _, row in df.iterrows():
             market_name = row["Market_and_Exchange_Names"].strip()
             canonical_name = COT_TO_CANONICAL.get(market_name, market_name)
-            symbol = row["CFTC_Contract_Market_Code_Quotes"]
+            symbol = row["CFTC_Contract_Market_Code_Quotes"].strip()
 
-            market = resolve_market(db, "cot", market_name, canonical_name=canonical_name)
-            if not market:
-                market = models.Market(name=market_name, symbol=symbol)  
-                db.add(market)
-                db.flush() 
+            # Prefer resolving by symbol, but also pass canonical for aliasing
+            market = resolve_market(
+                                    db,
+                                    source="cot",
+                                    source_symbol=market_name,                 # full verbose COT name
+                                    canonical_name=canonical_name,             # e.g. "Bitcoin Futures"
+                                    symbol=symbol
+                                )
 
             report = models.COTReport(
                 market_id=market.id,

@@ -4,23 +4,17 @@ from sqlalchemy.orm import Session
 from .db import SessionLocal
 from .models import Price, Market
 from backend.utils.markets import resolve_market
+from .utils.market_mapping import YAHOO_TO_CANONICAL
 
-# List of markets to ingest
-MARKETS = [("BTC-USD", "Bitcoin"), ("GC=F","Gold"), ("XRP-USD","XRP")]  # extend as needed
+MARKETS = ["BTC-USD", "GC=F", "XRP-USD"]  
 
-def fetch_and_store_market_data(session: Session, market: tuple):
-    ticker, name = market
-    print(f"Fetching data for {name}...")
+def fetch_and_store_market_data(session: Session, marketName):
+    print(f"Fetching data for {marketName}...")
 
-    market_obj = resolve_market(session, "yahoo", ticker, canonical_name=name)
-
-    if not market_obj:
-        market_obj = Market(name=name, symbol=ticker)
-        session.add(market_obj)
-        session.commit()  # commit so it gets an ID
-    
-    # Download historical data from yfinance
-    data = yf.download(ticker, start="2023-01-01", end="2025-09-30")
+    canonical = YAHOO_TO_CANONICAL.get(marketName, marketName)
+    market_obj = resolve_market(session, "yahoo", marketName, canonical_name=canonical)
+ 
+    data = yf.download(marketName, start="2023-01-01", end="2025-09-30")
 
     print(data.shape)
     print(data.head(1).T)
@@ -33,10 +27,9 @@ def fetch_and_store_market_data(session: Session, market: tuple):
         )
         session.add(price_entry)
     
-    print(f"Stored {len(data)} rows for {market}.")
+    print(f"Stored {len(data)} rows for {marketName}.")
 
 def main():
-    # Create a session
     session = SessionLocal()
     
     try:
@@ -52,7 +45,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
