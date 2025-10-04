@@ -15,21 +15,14 @@ import {
 import { Chart as ChartJSReact } from "react-chartjs-2";
 import 'chartjs-adapter-date-fns';
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  TimeScale,
-  BarElement,
-  LineElement,
-  PointElement,
-  Legend,
-  Tooltip,
-);
-
 export interface MarketDataPoint {
   date: string;
-  specLong: number;
-  specShort: number;
+  largeSpecLong: number;
+  largeSpecShort: number;
+  smallSpecLong: number;
+  smallSpecShort: number;
+  commsLong: number;
+  commsShort: number;
   price: number;
   alerts?: string[];
 }
@@ -83,8 +76,12 @@ const MockChart: React.FC<MockChartProps> = ({
               .map((d: any) => ({
                 ...d,
                 date: d.date.slice(0, 10),
-                specLong: d.specLong ?? 0,
-                specShort: d.specShort ?? 0,
+                largeSpecLong: d.largeSpecLong ?? 0,
+                largeSpecShort: d.largeSpecShort ?? 0,
+                smallSpecLong: d.smallSpecLong ?? 0,
+                smallSpecShort: d.smallSpecShort ?? 0,
+                commsLong: d.commsLong ?? 0,
+                commsShort: d.commsShort ?? 0,
                 price: d.price ?? null,
                 alerts: d.alerts ?? [],
               }))
@@ -128,26 +125,34 @@ const MockChart: React.FC<MockChartProps> = ({
 
   // Build combined data
   const combinedData = allDates.map((date) => {
-    let specLong = 0;
-    let specShort = 0;
+    let largeSpecLong = 0;
+    let largeSpecShort = 0;
+    let smallSpecLong = 0;
+    let smallSpecShort = 0;
+    let commsLong = 0;
+    let commsShort = 0;
     const prices: Record<string, number | null> = {};
 
     selectedMarkets.forEach((m) => {
       const point = (marketData[m] || []).find((d) => d.date === date);
       if (point) {
-        specLong += point.specLong ?? 0;
-        specShort += point.specShort ?? 0;
+        largeSpecLong += point.largeSpecLong ?? 0;
+        largeSpecShort += point.largeSpecShort ?? 0;
+        smallSpecLong += point.smallSpecLong ?? 0;
+        smallSpecShort += point.smallSpecShort ?? 0;
+        commsLong += point.commsLong ?? 0;
+        commsShort += point.commsShort ?? 0;
         prices[m] = point.price ?? null;
       } else {
         prices[m] = null;
       }
     });
 
-    return { date, specLong, specShort, prices };
+    return { date, largeSpecLong, largeSpecShort, smallSpecLong, smallSpecShort, commsLong, commsShort, prices };
   });
 
-  const maxSpecLong = Math.max(...combinedData.map(d => d.specLong));
-  const maxSpecShort = Math.max(...combinedData.map(d => d.specShort));
+  const maxSpecLong = Math.max(...combinedData.map(d => Math.max(d.largeSpecLong - d.largeSpecShort, d.commsLong - d.commsShort)));
+  const maxSpecShort = -Math.min(...combinedData.map(d => Math.min(d.largeSpecLong - d.largeSpecShort, d.commsLong - d.commsShort)));
 
   const maxPrice = Math.max(
     ...combinedData.flatMap(d => Object.values(d.prices).map(p => p ?? 0))
@@ -198,7 +203,17 @@ const MockChart: React.FC<MockChartProps> = ({
     }
   };
 
-  ChartJS.register(priceZeroBackgroundPlugin);
+  ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  TimeScale,
+  BarElement,
+  LineElement,
+  PointElement,
+  Legend,
+  Tooltip,
+  priceZeroBackgroundPlugin
+  );
 
   // Price datasets
   const priceDatasets = selectedMarkets.map((m, idx) => {
@@ -220,16 +235,16 @@ const MockChart: React.FC<MockChartProps> = ({
   const cotDatasets = [
     {
       type: "bar" as const,
-      label: "Spec Long",
-      data: combinedData.map((d) => ({ x: d.date, y: d.specLong })),
-      backgroundColor: "rgba(0,200,0,0.7)",
+      label: "Large Speculators",
+      data: combinedData.map((d) => ({ x: d.date, y: d.largeSpecLong - d.largeSpecShort })),
+      backgroundColor: "rgba(37, 0, 200, 0.86)",
       yAxisID: "yCOT",
       barThickness: 5,
     },
     {
       type: "bar" as const,
-      label: "Spec Short",
-      data: combinedData.map((d) => ({ x: d.date, y: -d.specShort })),
+      label: "Commercials",
+      data: combinedData.map((d) => ({ x: d.date, y: d.commsLong - d.commsShort })),
       backgroundColor: "rgba(200,0,0,0.7)",
       yAxisID: "yCOT",
       barThickness: 5,

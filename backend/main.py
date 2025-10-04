@@ -82,8 +82,12 @@ def get_market_data(market_name: str, db: Session = Depends(get_db)):
             {
                 "date": p.timestamp.isoformat(),
                 "price": p.price,
-                "specLong": cot.long_positions if cot else None,
-                "specShort": cot.short_positions if cot else None,
+                "largeSpecLong": cot.largeSpec_long_positions if cot else None,
+                "largeSpecShort": cot.largeSpec_short_positions if cot else None,
+                "smallSpecLong": cot.smallSpec_long_positions if cot else None,
+                "smallSpecShort": cot.smallSpec_short_positions if cot else None,
+                "commsLong": cot.comms_long_positions if cot else None,
+                "commsShort": cot.comms_short_positions if cot else None,
                 "alerts": [],
             }
         )

@@ -19,7 +19,7 @@ def clean_columns(df):
     return df
 
 def download_cot_file() -> pd.DataFrame:
-    url = "https://www.cftc.gov/files/dea/history/deacot2024.zip"
+    url = "https://www.cftc.gov/files/dea/history/deacot2023.zip"
     r = requests.get(url)
     r.raise_for_status()
 
