@@ -9,17 +9,21 @@ import {
   PointElement,
   Legend,
   Tooltip,
+  TimeScale,
+  ChartOptions,
 } from "chart.js";
 import { Chart as ChartJSReact } from "react-chartjs-2";
+import 'chartjs-adapter-date-fns';
 
 ChartJS.register(
   CategoryScale,
   LinearScale,
+  TimeScale,
   BarElement,
   LineElement,
   PointElement,
   Legend,
-  Tooltip
+  Tooltip,
 );
 
 export interface MarketDataPoint {
@@ -74,8 +78,18 @@ const MockChart: React.FC<MockChartProps> = ({
       await Promise.all(
         marketsToLoad.map(async (market) => {
           try {
-            const res = await axios.get(`http://127.0.0.1:8000/data/${market}`);
-            setMarketData((prev) => ({ ...prev, [market]: res.data }));
+            const res = await axios.get(`http://127.0.0.1:8000/data/${encodeURIComponent(market)}`);
+            const normalized: MarketDataPoint[] = res.data
+              .map((d: any) => ({
+                ...d,
+                date: d.date.slice(0, 10),
+                specLong: d.specLong ?? 0,
+                specShort: d.specShort ?? 0,
+                price: d.price ?? null,
+                alerts: d.alerts ?? [],
+              }))
+              .sort((a: MarketDataPoint, b: MarketDataPoint) => (a.date < b.date ? -1 : 1));
+            setMarketData((prev) => ({ ...prev, [market]: normalized }));
           } catch (err) {
             console.error("Failed to fetch market:", market, err);
           } finally {
@@ -93,153 +107,254 @@ const MockChart: React.FC<MockChartProps> = ({
   }, [selectedMarkets, marketData, loadingMarkets, setMarketData]);
 
   const toggleMarket = (market: string) => {
-  setSelectedMarkets((prev) => {
-    if (prev.includes(market)) {
-      // don’t allow removing the last one
-      if (prev.length === 1) return prev;
-      return prev.filter((m) => m !== market);
-    } else {
-      return [...prev, market];
-    }
-  });
-};
+    setSelectedMarkets((prev) => {
+      if (prev.includes(market)) {
+        if (prev.length === 1) return prev;
+        return prev.filter((m) => m !== market);
+      } else {
+        return [...prev, market];
+      }
+    });
+  };
 
-  // Find the market with the most data points
-  let marketWithMostData = selectedMarkets[0];
-  selectedMarkets.forEach((market) => {
-    if (marketData[market] && marketData[market].length > marketData[marketWithMostData]?.length) {
-      marketWithMostData = market;
-    }
-  });
-
-  const firstMarketData = marketData[marketWithMostData];
-
-  if (!firstMarketData) return <p>Loading chart...</p>;
-
+  // Build master date array
   const allDates = Array.from(
-  new Set(
-    selectedMarkets.flatMap((m) => marketData[m]?.map((d) => d.date) || [])
-  )
-).sort(); // ensure chronological order
+    new Set(
+      selectedMarkets.flatMap((m) => (marketData[m] || []).map((d) => d.date))
+    )
+  ).sort();
 
-const combinedData = allDates.map((date) => {
-  let specLong = 0;
-  let specShort = 0;
-  const prices: Record<string, number> = {};
+  if (allDates.length === 0) return <p>Loading chart...</p>;
 
-  selectedMarkets.forEach((m) => {
-    const point = marketData[m]?.find((d) => d.date === date);
-    if (point) {
-      specLong += point.specLong;
-      specShort += point.specShort;
-      prices[m] = point.price;
+  // Build combined data
+  const combinedData = allDates.map((date) => {
+    let specLong = 0;
+    let specShort = 0;
+    const prices: Record<string, number | null> = {};
+
+    selectedMarkets.forEach((m) => {
+      const point = (marketData[m] || []).find((d) => d.date === date);
+      if (point) {
+        specLong += point.specLong ?? 0;
+        specShort += point.specShort ?? 0;
+        prices[m] = point.price ?? null;
+      } else {
+        prices[m] = null;
+      }
+    });
+
+    return { date, specLong, specShort, prices };
+  });
+
+  const maxSpecLong = Math.max(...combinedData.map(d => d.specLong));
+  const maxSpecShort = Math.max(...combinedData.map(d => d.specShort));
+
+  const maxPrice = Math.max(
+    ...combinedData.flatMap(d => Object.values(d.prices).map(p => p ?? 0))
+  );
+  
+  function getDynamicStep(maxValue: number): number {
+    if (maxValue <= 1) return 0.1; 
+    const exponent = Math.floor(Math.log10(maxValue));
+    const base = Math.pow(10, exponent - 1); // one order smaller
+    return base * 5; // gives a "nice" step like 0.5, 5, 50, 500, etc.
+  }
+
+  function roundUpToInterval(value: number, interval: number): number {
+    return Math.ceil(value / interval) * interval;
+  }
+
+  const priceStep = getDynamicStep(maxPrice);
+  const specStep = getDynamicStep(maxSpecLong + maxSpecShort);
+  const roundedMaxPrice = roundUpToInterval(maxPrice, priceStep);
+  const roundedMaxSpecShort = roundUpToInterval(maxSpecShort, specStep);
+  const roundedMaxSpecLong = roundUpToInterval(maxSpecLong, specStep);
+  const roundedCotMax = roundUpToInterval((maxSpecLong * 4.5), specStep) + roundedMaxSpecShort;
+
+  const priceZeroBackgroundPlugin = {
+    id: "priceZeroBackground",
+    beforeDraw: (chart: any) => {
+      const ctx = chart.ctx;
+      const yScale = chart.scales.yPrice; 
+      const xScale = chart.scales.x;
+
+      if (!yScale) return;
+
+      const top = yScale.getPixelForValue(yScale.max);
+      const zero = yScale.getPixelForValue(0);
+      const bottom = yScale.getPixelForValue(yScale.min);
+
+      ctx.save();
+
+      // Shade above 0 (lighter grey)
+      ctx.fillStyle = "rgba(220, 220, 220, 0.3)";
+      ctx.fillRect(xScale.left, top, xScale.width, zero - top);
+
+      // Shade below 0 (darker grey)
+      ctx.fillStyle = "rgba(41, 39, 39, 0.3)";
+      ctx.fillRect(xScale.left, zero, xScale.width, bottom - zero);
+
+      ctx.restore();
     }
+  };
+
+  ChartJS.register(priceZeroBackgroundPlugin);
+
+  // Price datasets
+  const priceDatasets = selectedMarkets.map((m, idx) => {
+    const color = `hsl(${(idx * 73) % 360}, 65%, 45%)`;
+    return {
+      type: "line" as const,
+      label: `${m} Price`,
+      data: combinedData.map((d) => ({ x: d.date, y: d.prices[m] })),
+      borderColor: color,
+      backgroundColor: "transparent",
+      spanGaps: true,
+      yAxisID: "yPrice",
+      tension: 0.15,
+      pointRadius: 0,
+    };
   });
 
-  return { date, specLong, specShort: -specShort, prices };
-  });
-
-  const datasets: any[] = [
+  // COT datasets
+  const cotDatasets = [
     {
       type: "bar" as const,
       label: "Spec Long",
-      data: combinedData.map((d) => d.specLong),
-      backgroundColor: "rgba(0, 200, 0, 0.7)",
-      yAxisID: "y",
-      stack: "positions",
+      data: combinedData.map((d) => ({ x: d.date, y: d.specLong })),
+      backgroundColor: "rgba(0,200,0,0.7)",
+      yAxisID: "yCOT",
+      barThickness: 5,
     },
     {
       type: "bar" as const,
       label: "Spec Short",
-      data: combinedData.map((d) => d.specShort),
-      backgroundColor: "rgba(200, 0, 0, 0.7)",
-      yAxisID: "y",
-      stack: "positions",
+      data: combinedData.map((d) => ({ x: d.date, y: -d.specShort })),
+      backgroundColor: "rgba(200,0,0,0.7)",
+      yAxisID: "yCOT",
+      barThickness: 5,
     },
   ];
 
-  const lineColors = [
-  "#4363d8", // blue
-  "#f58231", // orange
-  "#911eb4", // purple
-  "#46f0f0", // cyan
-  "#f032e6", // magenta
-  "#bcf60c", // lime
-  "#fabebe", // pink
-  "#008080", // teal
-  "#e6beff", // lavender
-  "#9a6324", // brown
-  "#fffac8", // cream
-  "#800000", // maroon
-  "#aaffc3", // mint
-  "#808000", // olive
-  "#ffd8b1", // apricot
-  "#000075", // navy
-  "#808080", // gray
-  ];
-
-  selectedMarkets.forEach((m, i) => {
-    datasets.push({
-      type: "line" as const,
-      label: `${m} Price`,
-      data: combinedData.map((d) => d.prices[m]),
-      borderColor: lineColors[i % lineColors.length],
-      backgroundColor: "transparent",
-      yAxisID: "y1",
-    });
-  });
-
-  const data = {
-    labels: combinedData.map((d) => d.date),
-    datasets,
+  const chartData = {
+    datasets: [...priceDatasets, ...cotDatasets],
   };
 
-  const options = {
+  const chartOptions: ChartOptions<"bar" | "line"> = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
-      legend: { position: "top" as const },
-      title: {
-        display: true,
-        text: `Combined Positions: ${selectedMarkets.join(" + ")}`,
+      legend: { 
+        position: "bottom",
+        labels: {
+          filter: (item) => {
+            return !item.text.includes("Price");
+          }
+        }
       },
     },
     scales: {
-      y: {
-        type: "linear" as const,
-        position: "left" as const,
-        stacked: false,
+      x: {
+        type: "time",
+        time: { unit: "month" },
+        stacked: true,
+        ticks: {
+          callback: (val, i, ticks) => {
+            const d = new Date(val as string);
+            if (d.getMonth() === 0) return d.getFullYear().toString();
+            return d.toLocaleString("en-US", { month: "short" });
+          },
+        },
+        grid: { drawTicks: false, drawOnChartArea: true },
       },
-      y1: {
-        type: "linear" as const,
-        position: "right" as const,
+      yPrice: {
+        type: "linear",
+        position: "left",
+        min: -roundedMaxPrice / 2, 
+        max: roundedMaxPrice, 
+        title: { display: true, text: "                                     Price" },
         grid: {
-          drawOnChartArea: false,
+          color: (ctx) => {
+            const num = Number(ctx.tick.value);
+            if (num < 0) return "transparent";
+            return "rgba(200,200,200,0.2)"; // normal grid color
+          }
+        },
+        ticks: {
+          callback: function(value) { 
+            const num = Number(value); 
+            if (isNaN(num)) return '';           
+            if (num < 0) return '';
+            return num;
+          },
         },
       },
-      x: {
-        type: 'category' as const,
-        labels: combinedData.map((d) => d.date),
-      }
+      yCOT: {
+        type: "linear",
+        position: "right",
+        stacked: true,     
+        min: -roundedMaxSpecShort,
+        max: roundedCotMax,     
+        title: { display: true, text: "COT              ",
+           align: "start",
+            padding: {
+          top: 10,
+          bottom: 30
+        }
+          },
+        grid: {
+          color: (ctx) => {
+            const num = Number(ctx.tick.value);
+            if (num > roundedMaxSpecLong) return "transparent";
+            return "rgba(200,200,200,0.2)"; // normal grid color
+          }
+        },
+        ticks: {
+          callback: function(value) { 
+            const num = Number(value);
+            if (isNaN(num)) return '';          
+            if (num > roundedMaxSpecLong) return '';
+            return num; 
+          },
+        },
+      },
     },
   };
 
   return (
     <div>
-      <div>
-        {markets.map((market) => (
-          <label key={market} style={{ marginRight: "1rem" }}>
-            <input
-              type="checkbox"
-              checked={selectedMarkets.includes(market)}
-              onChange={() => toggleMarket(market)}
-            />
-            {market}
-          </label>
-        ))}
+      <div style={{ marginBottom: "1rem" }}>
+        {markets.map((market, idx) => {
+          const color = `hsl(${(idx * 73) % 360}, 65%, 45%)`;
+          return (
+            <label
+              key={market}
+              style={{
+                marginRight: "1rem",
+                display: "inline-flex",
+                alignItems: "center",
+                color,
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={selectedMarkets.includes(market)}
+                onChange={() => toggleMarket(market)}
+                style={{ accentColor: color, marginRight: "0.4rem" }}
+              />
+              {market}
+            </label>
+          );
+        })}
       </div>
-      <ChartJSReact type="bar" data={data} options={options} />
+
+      <div style={{ height: 500 }}>
+        <ChartJSReact type="bar" data={chartData} options={chartOptions} />
+      </div>
     </div>
   );
 };
 
 export default MockChart;
+
+
