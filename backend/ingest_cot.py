@@ -48,6 +48,7 @@ def ingest_cot():
             market_name = row["Market_and_Exchange_Names"].strip()
             canonical_name = COT_TO_CANONICAL.get(market_name, market_name)
             symbol = row["CFTC_Contract_Market_Code_Quotes"].strip()
+            report_Date = pd.to_datetime(row["As_of_Date_in_Form_YYYY_MM_DD"])
 
             # Prefer resolving by symbol, but also pass canonical for aliasing
             market = resolve_market(
@@ -58,17 +59,20 @@ def ingest_cot():
                                     symbol=symbol
                                 )
 
-            report = models.COTReport(
-                market_id=market.id,
-                report_date=pd.to_datetime(row["As_of_Date_in_Form_YYYY_MM_DD"]),
-                comms_long_positions=row["Commercial_Positions_Long_All"],
-                comms_short_positions=row["Commercial_Positions_Short_All"],
-                largeSpec_long_positions=row["Noncommercial_Positions_Long_All"],
-                largeSpec_short_positions=row["Noncommercial_Positions_Short_All"],
-                smallSpec_long_positions=row["Nonreportable_Positions_Long_All"],
-                smallSpec_short_positions=row["Nonreportable_Positions_Short_All"],
-            )
-            db.add(report)
+            existing = db.query(models.COTReport).filter_by(market_id=market.id, report_date=report_Date).first()
+
+            if not existing:
+                report = models.COTReport(
+                    market_id=market.id,
+                    report_date=report_Date,
+                    comms_long_positions=row["Commercial_Positions_Long_All"],
+                    comms_short_positions=row["Commercial_Positions_Short_All"],
+                    largeSpec_long_positions=row["Noncommercial_Positions_Long_All"],
+                    largeSpec_short_positions=row["Noncommercial_Positions_Short_All"],
+                    smallSpec_long_positions=row["Nonreportable_Positions_Long_All"],
+                    smallSpec_short_positions=row["Nonreportable_Positions_Short_All"],
+                )
+                db.add(report)
 
         db.commit()
         print("COT ingestion complete")

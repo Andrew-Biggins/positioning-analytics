@@ -6,7 +6,7 @@ from .models import Price, Market
 from backend.utils.markets import resolve_market
 from .utils.market_mapping import YAHOO_TO_CANONICAL
 
-MARKETS = ["BTC-USD", "GC=F", "XRP-USD"]  
+MARKETS = ["BTC-USD", "GC=F", "XRP-USD", "ETH-USD"]  
 
 def fetch_and_store_market_data(session: Session, marketName):
     print(f"Fetching data for {marketName}...")
@@ -20,12 +20,15 @@ def fetch_and_store_market_data(session: Session, marketName):
     print(data.head(1).T)
     
     for date, row in data.iterrows():
-        price_entry = Price(
-            market_id=market_obj.id,
-            timestamp=date,
-            price = row["Close"].item()
-        )
-        session.add(price_entry)
+        existing = session.query(Price).filter_by(market_id=market_obj.id, timestamp=date).first()
+        if not existing:
+            price_entry = Price(
+                market_id=market_obj.id,
+                timestamp=date,
+                price = row["Close"].item()
+            )
+            print(f"Adding {marketName}")
+            session.add(price_entry)
     
     print(f"Stored {len(data)} rows for {marketName}.")
 

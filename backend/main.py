@@ -22,7 +22,9 @@ Base.metadata.create_all(bind=engine)
 MARKET_MAPPING = {
     "XAU": "XAUUSD",
     "BTC": "BTCUSD",
-    "XRP": "XRP-USD"
+    "XRP": "XRP-USD",
+    "ETH": "XRP-USD"
+
 }
 
 def get_db():
