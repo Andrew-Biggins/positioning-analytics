@@ -28,8 +28,12 @@ class COTReport(Base):
     id = Column(Integer, primary_key=True, index=True)
     market_id = Column(Integer, ForeignKey("markets.id"), nullable=False)
     report_date = Column(Date, nullable=False)
-    long_positions = Column(Integer, nullable=False)
-    short_positions = Column(Integer, nullable=False)
+    comms_long_positions = Column(Integer, nullable=False)
+    comms_short_positions = Column(Integer, nullable=False)
+    largeSpec_long_positions = Column(Integer, nullable=False)
+    largeSpec_short_positions = Column(Integer, nullable=False)
+    smallSpec_long_positions = Column(Integer, nullable=False)
+    smallSpec_short_positions = Column(Integer, nullable=False)
     market = relationship("Market", back_populates="cot_reports")
 
 class MarketAlias(Base):

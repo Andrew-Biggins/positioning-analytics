@@ -19,7 +19,7 @@ def clean_columns(df):
     return df
 
 def download_cot_file() -> pd.DataFrame:
-    url = "https://www.cftc.gov/files/dea/history/deacot2025.zip"
+    url = "https://www.cftc.gov/files/dea/history/deacot2024.zip"
     r = requests.get(url)
     r.raise_for_status()
 
@@ -61,8 +61,12 @@ def ingest_cot():
             report = models.COTReport(
                 market_id=market.id,
                 report_date=pd.to_datetime(row["As_of_Date_in_Form_YYYY_MM_DD"]),
-                long_positions=row["Noncommercial_Positions_Long_All"],
-                short_positions=row["Noncommercial_Positions_Short_All"],
+                comms_long_positions=row["Commercial_Positions_Long_All"],
+                comms_short_positions=row["Commercial_Positions_Short_All"],
+                largeSpec_long_positions=row["Noncommercial_Positions_Long_All"],
+                largeSpec_short_positions=row["Noncommercial_Positions_Short_All"],
+                smallSpec_long_positions=row["Nonreportable_Positions_Long_All"],
+                smallSpec_short_positions=row["Nonreportable_Positions_Short_All"],
             )
             db.add(report)
 
@@ -75,7 +79,6 @@ def ingest_cot():
 
     finally:
         db.close()
-
 
 if __name__ == "__main__":
     ingest_cot()
