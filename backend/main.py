@@ -23,8 +23,7 @@ MARKET_MAPPING = {
     "XAU": "XAUUSD",
     "BTC": "BTCUSD",
     "XRP": "XRP-USD",
-    "ETH": "XRP-USD"
-
+    "ETH": "ETH-USD"
 }
 
 def get_db():
@@ -90,7 +89,6 @@ def get_market_data(market_name: str, db: Session = Depends(get_db)):
                 "smallSpecShort": cot.smallSpec_short_positions if cot else None,
                 "commsLong": cot.comms_long_positions if cot else None,
                 "commsShort": cot.comms_short_positions if cot else None,
-                "alerts": [],
             }
         )
 

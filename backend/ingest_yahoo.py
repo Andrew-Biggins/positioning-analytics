@@ -18,6 +18,8 @@ def fetch_and_store_market_data(session: Session, marketName):
 
     print(data.shape)
     print(data.head(1).T)
+
+    count = 0
     
     for date, row in data.iterrows():
         existing = session.query(Price).filter_by(market_id=market_obj.id, timestamp=date).first()
@@ -29,8 +31,9 @@ def fetch_and_store_market_data(session: Session, marketName):
             )
             print(f"Adding {marketName}")
             session.add(price_entry)
+            count = count + 1
     
-    print(f"Stored {len(data)} rows for {marketName}.")
+    print(f"Stored {count} rows for {marketName}.")
 
 def main():
     session = SessionLocal()

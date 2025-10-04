@@ -15,7 +15,7 @@ YAHOO_TO_CANONICAL = {
 
 CANONICAL_TO_NAME = {
     "BTC": "Bitcoin Futures (CME)",
-    "ETH": "Ethereum Futures (CME)",
+    "ETH": "Ethereum Futures (CME)", 
     "XAU": "Gold Futures (COMEX)",
     "XAG": "Silver Futures (COMEX)",
     "CL": "Crude Oil Futures (NYMEX)",

@@ -1,5 +1,4 @@
-import React, { useEffect, Dispatch, SetStateAction } from "react";
-import axios from "axios";
+import React from "react";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -29,80 +28,17 @@ export interface MarketDataPoint {
 
 interface MockChartProps {
   markets: string[];
-  setMarkets: Dispatch<SetStateAction<string[]>>;
   selectedMarkets: string[];
-  setSelectedMarkets: Dispatch<SetStateAction<string[]>>;
+  setSelectedMarkets: React.Dispatch<React.SetStateAction<string[]>>;
   marketData: Record<string, MarketDataPoint[]>;
-  setMarketData: Dispatch<SetStateAction<Record<string, MarketDataPoint[]>>>;
 }
 
 const MockChart: React.FC<MockChartProps> = ({
   markets,
-  setMarkets,
   selectedMarkets,
   setSelectedMarkets,
   marketData,
-  setMarketData,
 }) => {
-  const [loadingMarkets, setLoadingMarkets] = React.useState<Set<string>>(new Set());
-
-  useEffect(() => {
-    axios.get("http://127.0.0.1:8000/markets").then((res) => {
-      setMarkets(res.data.markets);
-      if (res.data.markets.length > 0) {
-        setSelectedMarkets([res.data.markets[0]]);
-      }
-    });
-  }, [setMarkets, setSelectedMarkets]);
-
-  useEffect(() => {
-    const fetchMarkets = async () => {
-      const marketsToLoad = selectedMarkets.filter(
-        (m) => !marketData[m] && !loadingMarkets.has(m)
-      );
-      if (marketsToLoad.length === 0) return;
-
-      setLoadingMarkets((prev) => {
-        const copy = new Set(prev);
-        marketsToLoad.forEach((m) => copy.add(m));
-        return copy;
-      });
-
-      await Promise.all(
-        marketsToLoad.map(async (market) => {
-          try {
-            const res = await axios.get(`http://127.0.0.1:8000/data/${encodeURIComponent(market)}`);
-            const normalized: MarketDataPoint[] = res.data
-              .map((d: any) => ({
-                ...d,
-                date: d.date.slice(0, 10),
-                largeSpecLong: d.largeSpecLong ?? 0,
-                largeSpecShort: d.largeSpecShort ?? 0,
-                smallSpecLong: d.smallSpecLong ?? 0,
-                smallSpecShort: d.smallSpecShort ?? 0,
-                commsLong: d.commsLong ?? 0,
-                commsShort: d.commsShort ?? 0,
-                price: d.price ?? null,
-                alerts: d.alerts ?? [],
-              }))
-              .sort((a: MarketDataPoint, b: MarketDataPoint) => (a.date < b.date ? -1 : 1));
-            setMarketData((prev) => ({ ...prev, [market]: normalized }));
-          } catch (err) {
-            console.error("Failed to fetch market:", market, err);
-          } finally {
-            setLoadingMarkets((prev) => {
-              const copy = new Set(prev);
-              copy.delete(market);
-              return copy;
-            });
-          }
-        })
-      );
-    };
-
-    fetchMarkets();
-  }, [selectedMarkets, marketData, loadingMarkets, setMarketData]);
-
   const toggleMarket = (market: string) => {
     setSelectedMarkets((prev) => {
       if (prev.includes(market)) {
@@ -114,7 +50,6 @@ const MockChart: React.FC<MockChartProps> = ({
     });
   };
 
-  // Build master date array
   const allDates = Array.from(
     new Set(
       selectedMarkets.flatMap((m) => (marketData[m] || []).map((d) => d.date))
