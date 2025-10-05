@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import MockChart, { MarketDataPoint } from "./MockChart";
+import Chart, { MarketDataPoint } from "./Chart";
 import AlertsPanel, { Alert } from "./AlertsPanel";
 
 function MarketDashboard() {
@@ -86,7 +86,7 @@ function MarketDashboard() {
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
       {loading && <p>Loading market data...</p>}
-      <MockChart
+      <Chart
         markets={markets}
         selectedMarkets={selectedMarkets}
         setSelectedMarkets={setSelectedMarkets}

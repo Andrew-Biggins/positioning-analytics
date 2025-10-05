@@ -58,6 +58,16 @@ const MockChart: React.FC<MockChartProps> = ({
 
   if (allDates.length === 0) return <p>Loading chart...</p>;
 
+  function getColorForMarket(market: string) {
+    // simple hash-based color generation, consistent per name
+    let hash = 0;
+    for (let i = 0; i < market.length; i++) {
+      hash = market.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const hue = Math.abs(hash) % 360;
+    return `hsl(${hue}, 65%, 45%)`;
+  }
+
   // Build combined data
   const combinedData = allDates.map((date) => {
     let largeSpecLong = 0;
@@ -151,8 +161,8 @@ const MockChart: React.FC<MockChartProps> = ({
   );
 
   // Price datasets
-  const priceDatasets = selectedMarkets.map((m, idx) => {
-    const color = `hsl(${(idx * 73) % 360}, 65%, 45%)`;
+  const priceDatasets = selectedMarkets.map((m) => {
+    const color = getColorForMarket(m);
     return {
       type: "line" as const,
       label: `${m} Price`,
@@ -245,7 +255,7 @@ const MockChart: React.FC<MockChartProps> = ({
         stacked: true,     
         min: -roundedMaxSpecShort,
         max: roundedCotMax,     
-        title: { display: true, text: "COT              ",
+        title: { display: true, text: "COT                 ",
            align: "start",
             padding: {
           top: 10,
@@ -274,8 +284,8 @@ const MockChart: React.FC<MockChartProps> = ({
   return (
     <div>
       <div style={{ marginBottom: "1rem" }}>
-        {markets.map((market, idx) => {
-          const color = `hsl(${(idx * 73) % 360}, 65%, 45%)`;
+        {markets.map((market) => {
+          const color = getColorForMarket(market);
           return (
             <label
               key={market}
