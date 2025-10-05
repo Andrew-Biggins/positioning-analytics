@@ -16,7 +16,6 @@ def resolve_market(
     - canonical_name: optional friendly name for the market
     - symbol: clean ticker/code (preferred)
     """
-    # 1. Does an alias already exist?
     alias = (
         session.query(MarketAlias)
         .filter_by(source=source, source_symbol=source_symbol)
@@ -28,13 +27,11 @@ def resolve_market(
     name = CANONICAL_TO_NAME.get(canonical_name, canonical_name)
     market = session.query(Market).filter_by(name=name).first()
 
-    # 3. If no Market yet, create one with proper symbol + name
     if not market:
         market = Market(name=name,symbol=canonical_name)
         session.add(market)
         session.flush()
 
-    # 4. Create alias pointing at it
     alias = MarketAlias(
         market_id=market.id,
         source=source,

@@ -12,7 +12,9 @@ def fetch_and_store_market_data(session: Session, marketName):
     print(f"Fetching data for {marketName}...")
 
     canonical = YAHOO_TO_CANONICAL.get(marketName, marketName)
+    print(f"Conical: {canonical}...")
     market_obj = resolve_market(session, "yahoo", marketName, canonical_name=canonical)
+    print(f"Resolved: {market_obj.symbol}...")
  
     data = yf.download(marketName, start="2023-01-01", end="2025-09-30")
 
@@ -40,6 +42,7 @@ def main():
     
     try:
         for market in MARKETS:
+            print(f"Trying {market}")
             fetch_and_store_market_data(session, market)
         session.commit()
         print("All data committed successfully.")
@@ -49,5 +52,15 @@ def main():
     finally:
         session.close()
 
+
 if __name__ == "__main__":
     main()
+
+    from .generate_alerts import generate_alerts
+    session = SessionLocal()
+    try:
+        for market in MARKETS:
+            canonical_name = YAHOO_TO_CANONICAL.get(market, market)
+            generate_alerts(session, canonical_name, identifier_type="symbol")
+    finally:
+        session.close()

@@ -70,23 +70,25 @@ function MarketDashboard() {
     fetchMarketData();
   }, [selectedMarkets]);
 
-  // Fetch alerts
   useEffect(() => {
     if (selectedMarkets.length === 0) return;
 
-    axios
-      .get("http://127.0.0.1:8000/alerts", {
-        params: { markets: selectedMarkets },
-        paramsSerializer: (params) =>
-          (params.markets as string[])
-            .map((m) => `markets=${encodeURIComponent(m)}`)
-            .join("&"),
-      })
-      .then((res) => setAlerts(res.data.alerts))
-      .catch((err) => {
-        console.error("Failed to fetch alerts", err);
-        setAlerts([]);
-      });
+    const fetchAlerts = async () => {
+      let allAlerts: Alert[] = [];
+      for (const market of selectedMarkets) {
+        try {
+          const res = await axios.get(
+            `http://127.0.0.1:8000/alerts/${encodeURIComponent(market)}`
+          );
+          allAlerts = allAlerts.concat(res.data);
+        } catch (err) {
+          console.error("Failed to fetch alerts for:", market, err);
+        }
+      }
+      setAlerts(allAlerts);
+    };
+
+    fetchAlerts();
   }, [selectedMarkets]);
 
   return (

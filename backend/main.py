@@ -91,7 +91,36 @@ def get_market_data(market_name: str, db: Session = Depends(get_db)):
                 "commsShort": cot.comms_short_positions if cot else None,
             }
         )
-
     return result
 
+@app.get("/alerts/{market_name}")
+def get_market_alerts(market_name: str, db: Session = Depends(get_db)):
+# Find market row by name
+    market_row = (
+    db.query(models.Market)
+    .filter(models.Market.name.ilike(market_name))
+    .first()
+    )
+    if not market_row:
+        raise HTTPException(status_code=404, detail=f"Market '{market_name}' not found")
+
+    # Get alerts for the market
+    alerts = (
+        db.query(models.Alert)
+        .filter(models.Alert.market_id == market_row.id)
+        .order_by(models.Alert.timestamp.desc())
+        .all()
+    )
+
+    # Convert alerts to a list of dictionaries
+    alert_list = []
+    for alert in alerts:
+        alert_list.append({
+            "timestamp": alert.timestamp.isoformat(),
+            "alert_type": alert.alert_type,
+            "message": alert.message,
+            "value": alert.value,
+        })
+
+    return alert_list
 

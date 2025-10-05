@@ -12,7 +12,6 @@ def clean_columns(df):
     df.columns = (
         df.columns
         .str.strip()
-      #  .str.lower()
         .str.replace(r"[^\w]+", "_", regex=True)  # replace non-word chars with "_"
         .str.strip("_")  # remove leading/trailing _
     )
@@ -24,10 +23,6 @@ def download_cot_file() -> pd.DataFrame:
     r.raise_for_status()
 
     with zipfile.ZipFile(io.BytesIO(r.content)) as zf:
-        # List files in archive
-        print("Files in archive:", zf.namelist())
-
-        # Open the right file (looks like it's 'annual.txt')
         with zf.open("annual.txt") as f:
             df = pd.read_csv(f, sep=",", header=0)  
             df = clean_columns(df)
@@ -84,5 +79,17 @@ def ingest_cot():
     finally:
         db.close()
 
+
 if __name__ == "__main__":
     ingest_cot()
+
+    # Generate alerts after ingesting COT data
+    from .generate_alerts import generate_alerts
+    db: Session = SessionLocal()
+    try:
+        # Assuming you want to generate alerts for all markets in the COT report
+        # You might need to adjust this logic based on your specific requirements
+        for market_name in COT_TO_CANONICAL.values():
+            generate_alerts(db, market_name)
+    finally:
+        db.close()

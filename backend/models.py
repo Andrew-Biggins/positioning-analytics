@@ -12,6 +12,7 @@ class Market(Base):
     prices = relationship("Price", back_populates="market")
     cot_reports = relationship("COTReport", back_populates="market")
     aliases = relationship("MarketAlias", back_populates="market")
+    alerts = relationship("Alert", back_populates="market")
 
 class Price(Base):
     __tablename__ = "prices"
@@ -43,6 +44,17 @@ class MarketAlias(Base):
     market_id = Column(Integer, ForeignKey("markets.id"), nullable=False)
     source = Column(String, nullable=False)  # e.g. "yahoo", "cot"
     source_symbol = Column(String, nullable=False)  # e.g. "BTC-USD", "BITCOIN"
-
     market = relationship("Market", back_populates="aliases")
+
+class Alert(Base):
+    __tablename__ = "alerts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    timestamp = Column(DateTime, nullable=False)
+    market_id = Column(Integer, ForeignKey("markets.id"), nullable=False)
+    alert_type = Column(String, nullable=False)  # e.g. "max_net_long", "extreme_short", "rapid_change"
+    message = Column(String, nullable=False)  # e.g. "Ethereum large speculators are at maximum net long"
+    value = Column(Float, nullable=True)  # The actual value that triggered the alert
+
+    market = relationship("Market", back_populates="alerts")
 
