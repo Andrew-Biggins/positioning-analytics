@@ -1,8 +1,8 @@
 import React from "react";
 
-interface Alert {
+export interface Alert {
   market: string;
-  date: string;
+  timestamp: string;
   message: string;
 }
 
@@ -21,7 +21,7 @@ function AlertsPanel({ alerts }: Props) {
       <ul>
         {alerts.map((a, idx) => (
           <li key={idx}>
-            <strong>{a.market}</strong> ({a.date}): {a.message}
+            <strong>{a.market}</strong> ({new Date(a.timestamp).toLocaleDateString()}): {a.message}
           </li>
         ))}
       </ul>

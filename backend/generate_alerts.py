@@ -65,7 +65,7 @@ def create_alert(db: Session, market: Market, alert_type: str, message: str, val
     """
     # Check if an alert with the same properties already exists
     existing_alert = db.query(Alert).filter_by(
-        timestamp=datetime.now(),
+        message=message,
         market_id=market.id,
         alert_type=alert_type
     ).first()

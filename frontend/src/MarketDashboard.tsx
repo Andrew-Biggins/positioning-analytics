@@ -1,13 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import MockChart, { MarketDataPoint } from "./MockChart";
-import AlertsPanel from "./AlertsPanel";
-
-interface Alert {
-  market: string;
-  date: string;
-  message: string;
-}
+import AlertsPanel, { Alert } from "./AlertsPanel";
 
 function MarketDashboard() {
   const [markets, setMarkets] = useState<string[]>([]);
