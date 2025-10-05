@@ -15,9 +15,9 @@ The goal is to highlight when markets are extended or crowded, and generate insi
 ## 📌 Roadmap
 - [x] Setup React + TypeScript project
 - [x] Display mock charts (sample positioning data)
-- [ ] Add custom chart combinations (e.g. Gold + Silver)
+- [x] Add custom chart combinations (e.g. Gold + Silver)
 - [ ] Integrate technical analysis overlays (moving averages, ATR, etc.)
-- [ ] Build backend to fetch & process COT data
+- [x] Build backend to fetch & process COT data
 - [ ] Add ML/AI module to surface interesting trade setups
 
 ## 💡 Why?
