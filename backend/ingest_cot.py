@@ -18,7 +18,7 @@ def clean_columns(df):
     return df
 
 def download_cot_file() -> pd.DataFrame:
-    url = "https://www.cftc.gov/files/dea/history/deacot2023.zip"
+    url = "https://www.cftc.gov/files/dea/history/deacot2025.zip"
     r = requests.get(url)
     r.raise_for_status()
 
@@ -27,15 +27,15 @@ def download_cot_file() -> pd.DataFrame:
             df = pd.read_csv(f, sep=",", header=0)  
             df = clean_columns(df)
 
-    print(df.shape)
-    print(df.head(1).T)
-
     return df
 
 def ingest_cot(): 
     Base.metadata.create_all(bind=engine)
 
     df = download_cot_file()
+
+    previousMarketId = -1
+    count = 0
 
     db: Session = SessionLocal()
     try:
@@ -68,6 +68,15 @@ def ingest_cot():
                     smallSpec_short_positions=row["Nonreportable_Positions_Short_All"],
                 )
                 db.add(report)
+                count = count + 1
+
+            if previousMarketId == -1:
+                previousMarketId = market.id
+
+            if previousMarketId != market.id:
+                print(f"Stored {count} rows for {market_name}.")
+                previousMarketId = market.id
+                count = 0    
 
         db.commit()
         print("COT ingestion complete")

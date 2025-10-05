@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from .db import SessionLocal, engine, Base
 from . import models
+from .utils.market_mapping import CANONICAL_TO_NAME
+
 
 app = FastAPI()
 
@@ -40,7 +42,7 @@ def root():
 
 @app.get("/markets")
 def get_markets(db: Session = Depends(get_db)):
-    markets = db.query(models.Market.name).filter(models.Market.symbol.in_(MARKET_MAPPING.keys())).all()
+    markets = db.query(models.Market.name).filter(models.Market.symbol.in_(CANONICAL_TO_NAME.keys())).all()
     return {"markets": [m[0] for m in markets]}
 
 @app.get("/data/{market_name}")

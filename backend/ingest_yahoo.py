@@ -1,15 +1,15 @@
 # ingest.py
 import yfinance as yf
 from sqlalchemy.orm import Session
-from .db import SessionLocal
+from .db import SessionLocal, Base, engine
 from .models import Price, Market
 from backend.utils.markets import resolve_market
 from .utils.market_mapping import YAHOO_TO_CANONICAL
 
-MARKETS = ["BTC-USD", "GC=F", "XRP-USD", "ETH-USD"]  
-
 def fetch_and_store_market_data(session: Session, marketName):
     print(f"Fetching data for {marketName}...")
+    Base.metadata.create_all(bind=engine)
+
 
     canonical = YAHOO_TO_CANONICAL.get(marketName, marketName)
     print(f"Conical: {canonical}...")
@@ -41,7 +41,7 @@ def main():
     session = SessionLocal()
     
     try:
-        for market in MARKETS:
+        for market in YAHOO_TO_CANONICAL.keys():
             print(f"Trying {market}")
             fetch_and_store_market_data(session, market)
         session.commit()
@@ -59,7 +59,7 @@ if __name__ == "__main__":
     from .generate_alerts import generate_alerts
     session = SessionLocal()
     try:
-        for market in MARKETS:
+        for market in YAHOO_TO_CANONICAL.keys():
             canonical_name = YAHOO_TO_CANONICAL.get(market, market)
             generate_alerts(session, canonical_name, identifier_type="symbol")
     finally:

@@ -10,7 +10,6 @@ function MarketDashboard() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Fetch available markets once
   useEffect(() => {
     axios.get("http://127.0.0.1:8000/markets").then((res) => {
       const marketsList = res.data.markets;
@@ -19,7 +18,6 @@ function MarketDashboard() {
     });
   }, []);
 
-  // Fetch data for selected markets
   useEffect(() => {
     if (selectedMarkets.length === 0) return;
 
