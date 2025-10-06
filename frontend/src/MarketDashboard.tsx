@@ -11,7 +11,7 @@ function MarketDashboard() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    axios.get("http://127.0.0.1:8000/markets").then((res) => {
+    axios.get("https://trade-outside-the-box.onrender.com/markets").then((res) => {
       const marketsList = res.data.markets;
       setMarkets(marketsList);
       if (marketsList.length > 0) setSelectedMarkets([marketsList[0]]);
@@ -29,7 +29,7 @@ function MarketDashboard() {
         selectedMarkets.map(async (market) => {
           try {
             const res = await axios.get(
-              `http://127.0.0.1:8000/data/${encodeURIComponent(market)}`
+              `https://trade-outside-the-box.onrender.com/data/${encodeURIComponent(market)}`
             );
             const normalized = res.data
               .map((d: any) => ({
@@ -70,7 +70,7 @@ function MarketDashboard() {
       for (const market of selectedMarkets) {
         try {
           const res = await axios.get(
-            `http://127.0.0.1:8000/alerts/${encodeURIComponent(market)}`
+            `https://trade-outside-the-box.onrender.com/alerts/${encodeURIComponent(market)}`
           );
           allAlerts = allAlerts.concat(res.data);
         } catch (err) {
