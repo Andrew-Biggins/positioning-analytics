@@ -1,43 +1,39 @@
-# ingest.py
 import yfinance as yf
+from datetime import date
 from sqlalchemy.orm import Session
 from .db import SessionLocal, Base, engine
 from .models import Price, Market
 from backend.utils.markets import resolve_market
+from .generate_alerts import generate_alerts
 from .utils.market_mapping import YAHOO_TO_CANONICAL
 
 def fetch_and_store_market_data(session: Session, marketName):
-    print(f"Fetching data for {marketName}...")
     Base.metadata.create_all(bind=engine)
 
+    print(f"Fetching data for {marketName}...")
 
     canonical = YAHOO_TO_CANONICAL.get(marketName, marketName)
-    print(f"Conical: {canonical}...")
     market_obj = resolve_market(session, "yahoo", marketName, canonical_name=canonical)
-    print(f"Resolved: {market_obj.symbol}...")
- 
-    data = yf.download(marketName, start="2023-01-01", end="2025-09-30")
-
-    print(data.shape)
-    print(data.head(1).T)
+    
+    today = date.today().strftime("%Y-%m-%d")
+    data = yf.download(marketName, start="2023-01-01", end=today)
 
     count = 0
     
-    for date, row in data.iterrows():
-        existing = session.query(Price).filter_by(market_id=market_obj.id, timestamp=date).first()
+    for timestamp, row in data.iterrows():
+        existing = session.query(Price).filter_by(market_id=market_obj.id, timestamp=timestamp).first()
         if not existing:
             price_entry = Price(
                 market_id=market_obj.id,
-                timestamp=date,
+                timestamp=timestamp,
                 price = row["Close"].item()
             )
-            print(f"Adding {marketName}")
             session.add(price_entry)
-            count = count + 1
+            count += 1
     
     print(f"Stored {count} rows for {marketName}.")
 
-def main():
+def ingest_yahoo():
     session = SessionLocal()
     
     try:
@@ -52,11 +48,9 @@ def main():
     finally:
         session.close()
 
-
 if __name__ == "__main__":
-    main()
+    ingest_yahoo()
 
-    from .generate_alerts import generate_alerts
     session = SessionLocal()
     try:
         for market in YAHOO_TO_CANONICAL.keys():

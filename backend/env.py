@@ -1,1 +1,2 @@
-DATABASE_URL = "postgresql+psycopg2://postgres:ilikechipsandpeas@localhost:5432/markets"
+#DATABASE_URL = "postgresql+psycopg2://postgres:ilikechipsandpeas@localhost:5432/markets"
+DATABASE_URL = "postgresql://neondb_owner:npg_Uc0Yhqdt7rNT@ep-blue-dew-abef74ra-pooler.eu-west-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require"

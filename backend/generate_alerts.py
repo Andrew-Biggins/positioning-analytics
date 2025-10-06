@@ -60,10 +60,7 @@ def generate_alerts(db: Session, market_identifier: str, identifier_type: str = 
             create_alert(db, market, "rapid_change", alert_message, position_change)
 
 def create_alert(db: Session, market: Market, alert_type: str, message: str, value: float):
-    """
-    Creates and stores an alert in the database.
-    """
-    # Check if an alert with the same properties already exists
+    
     existing_alert = db.query(Alert).filter_by(
         message=message,
         market_id=market.id,
@@ -90,8 +87,8 @@ if __name__ == "__main__":
     from sqlalchemy.orm import sessionmaker
     from .db import Base  # Import Base from .db
 
-    engine = create_engine("sqlite:///./positioning.db")  # Replace with your database URL
-    Base.metadata.create_all(engine)  # Create tables
+    engine = create_engine("sqlite:///./positioning.db") 
+    Base.metadata.create_all(engine)  
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
     db = SessionLocal()

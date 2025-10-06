@@ -2,10 +2,12 @@ import requests
 import io
 import zipfile
 import pandas as pd
+from datetime import datetime
 from sqlalchemy.orm import Session
 from .db import SessionLocal, engine, Base
 from . import models
 from .utils.markets import resolve_market
+from .generate_alerts import generate_alerts
 from .utils.market_mapping import COT_TO_CANONICAL
 
 def clean_columns(df):
@@ -17,8 +19,8 @@ def clean_columns(df):
     )
     return df
 
-def download_cot_file() -> pd.DataFrame:
-    url = "https://www.cftc.gov/files/dea/history/deacot2025.zip"
+def download_cot_file(year) -> pd.DataFrame:
+    url = f"https://www.cftc.gov/files/dea/history/deacot{year}.zip"
     r = requests.get(url)
     r.raise_for_status()
 
@@ -29,10 +31,10 @@ def download_cot_file() -> pd.DataFrame:
 
     return df
 
-def ingest_cot(): 
+def ingest_cot(year): 
     Base.metadata.create_all(bind=engine)
 
-    df = download_cot_file()
+    df = download_cot_file(year)
 
     previousMarketId = -1
     count = 0
@@ -68,7 +70,7 @@ def ingest_cot():
                     smallSpec_short_positions=row["Nonreportable_Positions_Short_All"],
                 )
                 db.add(report)
-                count = count + 1
+                count += 1
 
             if previousMarketId == -1:
                 previousMarketId = market.id
@@ -90,14 +92,13 @@ def ingest_cot():
 
 
 if __name__ == "__main__":
-    ingest_cot()
+    current_year = datetime.now().year
+    for year in range(2023, current_year + 1):
+        print(f"\n=== Ingesting COT data for {year} ===")
+        ingest_cot(year)
 
-    # Generate alerts after ingesting COT data
-    from .generate_alerts import generate_alerts
     db: Session = SessionLocal()
     try:
-        # Assuming you want to generate alerts for all markets in the COT report
-        # You might need to adjust this logic based on your specific requirements
         for market_name in COT_TO_CANONICAL.values():
             generate_alerts(db, market_name)
     finally:
