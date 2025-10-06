@@ -9,6 +9,8 @@ import {
   Legend,
   Tooltip,
   TimeScale,
+  LineController,    
+  BarController,
   ChartOptions,
 } from "chart.js";
 import { Chart as ChartJSReact } from "react-chartjs-2";
@@ -155,6 +157,8 @@ const MockChart: React.FC<MockChartProps> = ({
   BarElement,
   LineElement,
   PointElement,
+  LineController,    
+  BarController,
   Legend,
   Tooltip,
   priceZeroBackgroundPlugin
