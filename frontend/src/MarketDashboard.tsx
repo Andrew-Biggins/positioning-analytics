@@ -16,8 +16,6 @@ function MarketDashboard() {
   throw new Error("API URL not defined");
 }
 
-console.log("Using API:", apiUrl);
-
   useEffect(() => {
     axios.get(`${apiUrl}/markets`).then((res) => {
       const marketsList = res.data.markets;
