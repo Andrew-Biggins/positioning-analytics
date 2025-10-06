@@ -10,8 +10,16 @@ function MarketDashboard() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const apiUrl = process.env.REACT_APP_API_BASE_URL;
+
+  if (!apiUrl) {
+  throw new Error("API URL not defined");
+}
+
+console.log("Using API:", apiUrl);
+
   useEffect(() => {
-    axios.get("https://trade-outside-the-box.onrender.com/markets").then((res) => {
+    axios.get(`${apiUrl}/markets`).then((res) => {
       const marketsList = res.data.markets;
       setMarkets(marketsList);
       if (marketsList.length > 0) setSelectedMarkets([marketsList[0]]);
@@ -29,7 +37,7 @@ function MarketDashboard() {
         selectedMarkets.map(async (market) => {
           try {
             const res = await axios.get(
-              `https://trade-outside-the-box.onrender.com/data/${encodeURIComponent(market)}`
+              `${apiUrl}/data/${encodeURIComponent(market)}`
             );
             const normalized = res.data
               .map((d: any) => ({
@@ -70,7 +78,7 @@ function MarketDashboard() {
       for (const market of selectedMarkets) {
         try {
           const res = await axios.get(
-            `https://trade-outside-the-box.onrender.com/alerts/${encodeURIComponent(market)}`
+            `${apiUrl}/alerts/${encodeURIComponent(market)}`
           );
           allAlerts = allAlerts.concat(res.data);
         } catch (err) {
