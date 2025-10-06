@@ -1,6 +1,6 @@
-from backend.models import Market, MarketAlias
+from models import Market, MarketAlias
 from sqlalchemy.orm import Session
-from backend.utils.market_mapping import CANONICAL_TO_NAME
+from utils.market_mapping import CANONICAL_TO_NAME
 
 def resolve_market(
     session: Session,

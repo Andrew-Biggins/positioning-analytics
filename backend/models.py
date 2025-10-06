@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, Float, String, Date, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
-from .db import Base
+from db import Base
 
 class Market(Base):
     __tablename__ = "markets"

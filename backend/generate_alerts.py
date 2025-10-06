@@ -1,7 +1,6 @@
 from datetime import datetime
 from sqlalchemy.orm import Session
-from .models import Market, Alert, COTReport
-from .utils import markets
+from models import Market, Alert, COTReport
 import numpy as np
 
 def generate_alerts(db: Session, market_identifier: str, identifier_type: str = "symbol"):

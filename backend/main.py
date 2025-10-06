@@ -1,9 +1,9 @@
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from .db import SessionLocal, engine, Base
-from . import models
-from .utils.market_mapping import CANONICAL_TO_NAME
+from db import SessionLocal, engine, Base
+import models
+from utils.market_mapping import CANONICAL_TO_NAME
 
 
 app = FastAPI()

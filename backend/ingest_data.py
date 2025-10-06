@@ -1,11 +1,11 @@
 from sqlalchemy.orm import Session
 from datetime import datetime
-from .db import SessionLocal
-from .ingest_yahoo import ingest_yahoo
-from .ingest_cot import ingest_cot
-from .generate_alerts import generate_alerts
-from .generate_alerts import generate_alerts
-from .utils.market_mapping import COT_TO_CANONICAL
+from db import SessionLocal
+from ingest_yahoo import ingest_yahoo
+from ingest_cot import ingest_cot
+from generate_alerts import generate_alerts
+from generate_alerts import generate_alerts
+from utils.market_mapping import COT_TO_CANONICAL
 
 if __name__ == "__main__":
     ingest_yahoo()

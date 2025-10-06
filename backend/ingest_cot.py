@@ -4,11 +4,11 @@ import zipfile
 import pandas as pd
 from datetime import datetime
 from sqlalchemy.orm import Session
-from .db import SessionLocal, engine, Base
-from . import models
-from .utils.markets import resolve_market
-from .generate_alerts import generate_alerts
-from .utils.market_mapping import COT_TO_CANONICAL
+from db import SessionLocal, engine, Base
+import models
+from utils.markets import resolve_market
+from generate_alerts import generate_alerts
+from utils.market_mapping import COT_TO_CANONICAL
 
 def clean_columns(df):
     df.columns = (

@@ -1,11 +1,11 @@
 import yfinance as yf
 from datetime import date
 from sqlalchemy.orm import Session
-from .db import SessionLocal, Base, engine
-from .models import Price, Market
-from backend.utils.markets import resolve_market
-from .generate_alerts import generate_alerts
-from .utils.market_mapping import YAHOO_TO_CANONICAL
+from db import SessionLocal, Base, engine
+from models import Price, Market
+from utils.markets import resolve_market
+from generate_alerts import generate_alerts
+from utils.market_mapping import YAHOO_TO_CANONICAL
 
 def fetch_and_store_market_data(session: Session, marketName):
     Base.metadata.create_all(bind=engine)
