@@ -42,8 +42,8 @@ def root():
 
 @app.get("/markets")
 def get_markets(db: Session = Depends(get_db)):
-    markets = db.query(models.Market.name).filter(models.Market.symbol.in_(CANONICAL_TO_NAME.keys())).all()
-    return {"markets": [m[0] for m in markets]}
+    markets = db.query(models.Market.name, models.Market.asset_class).filter(models.Market.symbol.in_(CANONICAL_TO_NAME.keys())).all()
+    return {"markets": [{"name": m[0], "asset_class": m[1]} for m in markets]}
 
 @app.get("/data/{market_name}")
 def get_market_data(market_name: str, db: Session = Depends(get_db)):

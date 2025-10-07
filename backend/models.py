@@ -8,6 +8,7 @@ class Market(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False, unique=True)
     symbol = Column(String, nullable=False)
+    asset_class = Column(String, nullable=True)
 
     prices = relationship("Price", back_populates="market")
     cot_reports = relationship("COTReport", back_populates="market")

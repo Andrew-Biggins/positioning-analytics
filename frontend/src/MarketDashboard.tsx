@@ -3,8 +3,13 @@ import axios from "axios";
 import Chart, { MarketDataPoint } from "./Chart";
 import AlertsPanel, { Alert } from "./AlertsPanel";
 
+interface Market {
+  name: string;
+  asset_class: string;
+}
+
 function MarketDashboard() {
-  const [markets, setMarkets] = useState<string[]>([]);
+  const [markets, setMarkets] = useState<Market[]>([]);
   const [selectedMarkets, setSelectedMarkets] = useState<string[]>([]);
   const [marketData, setMarketData] = useState<Record<string, MarketDataPoint[]>>({});
   const [alerts, setAlerts] = useState<Alert[]>([]);
@@ -18,9 +23,9 @@ function MarketDashboard() {
 
   useEffect(() => {
     axios.get(`${apiUrl}/markets`).then((res) => {
-      const marketsList = res.data.markets;
+      const marketsList: Market[] = res.data.markets;
       setMarkets(marketsList);
-      if (marketsList.length > 0) setSelectedMarkets([marketsList[0]]);
+      if (marketsList.length > 0) setSelectedMarkets([marketsList[0].name]);
     });
   }, []);
 
@@ -92,15 +97,37 @@ function MarketDashboard() {
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
       {loading && <p>Loading market data...</p>}
-      <Chart
-        markets={markets}
-        selectedMarkets={selectedMarkets}
-        setSelectedMarkets={setSelectedMarkets}
-        marketData={marketData}
-      />
+      <div>
+        {Object.entries(groupByAssetClass(markets)).map(
+          ([assetClass, markets]) => (
+            <div key={assetClass}>
+              <h3>{assetClass}</h3>
+              <Chart
+                markets={markets.map((m) => m.name)}
+                selectedMarkets={selectedMarkets}
+                setSelectedMarkets={setSelectedMarkets}
+                marketData={marketData}
+              />
+            </div>
+          )
+        )}
+      </div>
       <AlertsPanel alerts={alerts} />
     </div>
   );
+}
+
+function groupByAssetClass<T extends { asset_class: string }>(
+  markets: T[]
+): Record<string, T[]> {
+  return markets.reduce((acc: Record<string, T[]>, market: T) => {
+    const assetClass = market.asset_class;
+    if (!acc[assetClass]) {
+      acc[assetClass] = [];
+    }
+    acc[assetClass].push(market);
+    return acc;
+  }, {});
 }
 
 export default MarketDashboard;

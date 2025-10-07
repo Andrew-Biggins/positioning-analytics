@@ -166,3 +166,38 @@ CANONICAL_TO_NAME = {
     "6C": "Canadian Dollar Futures (CME)",
     "6A": "Australian Dollar Futures (CME)"
 }
+
+CANONICAL_TO_ASSETCLASS = {
+    "BTC": "Crypto",
+    "ETH": "Crypto",
+    "XRP": "Crypto",
+    "XAU": "Metals",
+    "XAG": "Metals",
+    "XPT": "Metals",
+    "XPD": "Metals",
+    "HG": "Metals",
+    "CL": "Energy",
+    "BZ": "Energy",
+    "NG": "Energy",
+    "HO": "Energy",
+    "RB": "Energy",
+    "ZC": "Agriculture",
+    "ZS": "Agriculture",
+    "ZW": "Agriculture",
+    "KC": "Agriculture",
+    "CT": "Agriculture",
+    "CC": "Agriculture",
+    "OJ": "Agriculture",
+    "LE": "Livestock & Dairy",
+    "HE": "Livestock & Dairy",
+    "ES": "Equity Indices",
+    "NQ": "Equity Indices",
+    "YM": "Equity Indices",
+    "RTY": "Equity Indices",
+    "6E": "Currencies",
+    "6B": "Currencies",
+    "6J": "Currencies",
+    "6S": "Currencies",
+    "6C": "Currencies",
+    "6A": "Currencies"
+}

@@ -8,8 +8,6 @@ from generate_alerts import generate_alerts
 from utils.market_mapping import YAHOO_TO_CANONICAL
 
 def fetch_and_store_market_data(session: Session, marketName):
-    Base.metadata.create_all(bind=engine)
-
     print(f"Fetching data for {marketName}...")
 
     canonical = YAHOO_TO_CANONICAL.get(marketName, marketName)
@@ -35,7 +33,10 @@ def fetch_and_store_market_data(session: Session, marketName):
 
 def ingest_yahoo():
     session = SessionLocal()
-    
+
+    #Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+
     try:
         for market in YAHOO_TO_CANONICAL.keys():
             print(f"Trying {market}")

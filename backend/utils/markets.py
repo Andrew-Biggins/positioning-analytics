@@ -28,7 +28,9 @@ def resolve_market(
     market = session.query(Market).filter_by(name=name).first()
 
     if not market:
-        market = Market(name=name,symbol=canonical_name)
+        from utils.market_mapping import CANONICAL_TO_ASSETCLASS
+        asset_class = CANONICAL_TO_ASSETCLASS.get(canonical_name)
+        market = Market(name=name, symbol=canonical_name, asset_class=asset_class)
         session.add(market)
         session.flush()
 
