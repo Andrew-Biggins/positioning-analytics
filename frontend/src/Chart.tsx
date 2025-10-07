@@ -54,7 +54,7 @@ const MockChart: React.FC<MockChartProps> = ({
 
   const allDates = Array.from(
     new Set(
-      selectedMarkets.flatMap((m) => (marketData[m] || []).map((d) => d.date))
+      markets.flatMap((m) => (marketData[m] || []).map((d) => d.date))
     )
   ).sort();
 
@@ -80,7 +80,8 @@ const MockChart: React.FC<MockChartProps> = ({
     let commsShort = 0;
     const prices: Record<string, number | null> = {};
 
-    selectedMarkets.forEach((m) => {
+    markets.forEach((m) => {
+      if (!selectedMarkets.includes(m)) return;
       const point = (marketData[m] || []).find((d) => d.date === date);
       if (point) {
         largeSpecLong += point.largeSpecLong ?? 0;
@@ -165,7 +166,7 @@ const MockChart: React.FC<MockChartProps> = ({
   );
 
   // Price datasets
-  const priceDatasets = selectedMarkets.map((m) => {
+  const priceDatasets = markets.map((m) => {
     const color = getColorForMarket(m);
     return {
       type: "line" as const,

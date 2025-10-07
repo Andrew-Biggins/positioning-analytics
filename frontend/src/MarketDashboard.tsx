@@ -25,7 +25,11 @@ function MarketDashboard() {
     axios.get(`${apiUrl}/markets`).then((res) => {
       const marketsList: Market[] = res.data.markets;
       setMarkets(marketsList);
-      if (marketsList.length > 0) setSelectedMarkets([marketsList[0].name]);
+      if (marketsList.length > 0) {
+        const initialSelectedMarkets = Object.values(groupByAssetClass(marketsList))
+          .map(markets => markets[0].name);
+        setSelectedMarkets(initialSelectedMarkets);
+      }
     });
   }, []);
 
