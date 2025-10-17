@@ -1,11 +1,14 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { MultiSelect } from "react-multi-select-component";
 
+type MultiSelectOption = { label: string; value: string };
+
 export interface Alert {
-  market: string;
+  market: string | null;
   timestamp: string;
   message: string;
   alert_type: string;
+  value?: number | null;
 }
 
 interface Props {
@@ -13,6 +16,9 @@ interface Props {
   assetClasses: string[];
   markets: string[];
   alertTypes: string[];
+  assetClassFilter: string[] | null;
+  marketFilter: string[] | null;
+  alertTypeFilter: string[] | null;
   setAssetClassFilter: (filter: string[] | null) => void;
   setMarketFilter: (filter: string[] | null) => void;
   setAlertTypeFilter: (filter: string[] | null) => void;
@@ -23,33 +29,56 @@ function AlertsPanel({
   assetClasses,
   markets,
   alertTypes,
+  assetClassFilter,
+  marketFilter,
+  alertTypeFilter,
   setAssetClassFilter,
   setMarketFilter,
   setAlertTypeFilter,
 }: Props) {
-  const [selectedAssetClasses, setSelectedAssetClasses] = useState<string[]>([]);
-  const [selectedMarkets, setSelectedMarkets] = useState<string[]>([]);
-  const [selectedAlertTypes, setSelectedAlertTypes] = useState<string[]>([]);
+  const buildOptions = (values: string[]): MultiSelectOption[] =>
+    values.map((value) => ({ label: value, value }));
 
-  // Convert plain arrays to MultiSelect format
-  const toOptions = (arr: string[]) =>
-    arr.map((v) => ({ label: v, value: v }));
-
-  // “Select All” helper
-  const handleSelectAll = (
-    options: { label: string; value: string }[],
-    setSelected: React.Dispatch<React.SetStateAction<string[]>>,
-    setFilter: (filter: string[] | null) => void,
-    allSelected: boolean
-  ) => {
-    if (allSelected) {
-      setSelected([]);
-      setFilter(null);
-    } else {
-      const allValues = options.map((o) => o.value);
-      setSelected(allValues);
-      setFilter(allValues);
+  const resolveSelection = (options: string[], filter: string[] | null): string[] => {
+    if (filter === null) {
+      return options;
     }
+    const optionSet = new Set(options);
+    return filter.filter((value) => optionSet.has(value));
+  };
+
+  const selectedAssetClasses = resolveSelection(assetClasses, assetClassFilter);
+  const selectedMarkets = resolveSelection(markets, marketFilter);
+  const selectedAlertTypes = resolveSelection(alertTypes, alertTypeFilter);
+
+  const assetClassOptions = buildOptions(assetClasses);
+  const marketOptions = buildOptions(markets);
+  const alertTypeOptions = buildOptions(alertTypes);
+
+  const assetClassValue = assetClassOptions.filter((option) =>
+    selectedAssetClasses.includes(option.value)
+  );
+  const marketValue = marketOptions.filter((option) => selectedMarkets.includes(option.value));
+  const alertTypeValue = alertTypeOptions.filter((option) =>
+    selectedAlertTypes.includes(option.value)
+  );
+
+  const handleAssetClassChange = (selected: MultiSelectOption[]) => {
+    const values = selected.map((option) => option.value);
+    const filter = values.length === assetClasses.length ? null : values;
+    setAssetClassFilter(filter);
+  };
+
+  const handleMarketChange = (selected: MultiSelectOption[]) => {
+    const values = selected.map((option) => option.value);
+    const filter = values.length === markets.length ? null : values;
+    setMarketFilter(filter);
+  };
+
+  const handleAlertTypeChange = (selected: MultiSelectOption[]) => {
+    const values = selected.map((option) => option.value);
+    const filter = values.length === alertTypes.length ? null : values;
+    setAlertTypeFilter(filter);
   };
 
   return (
@@ -57,76 +86,59 @@ function AlertsPanel({
       style={{
         border: "1px solid #ccc",
         padding: "1rem",
-        maxHeight: "250px",
-        overflowY: "auto",
         borderRadius: "8px",
       }}
     >
       <h3>Market Alerts</h3>
 
       <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
-        {/* Asset Class Filter */}
         <div style={{ flex: 1 }}>
           <label>Asset Class:</label>
           <MultiSelect
-            options={toOptions(assetClasses)}
-            value={toOptions(selectedAssetClasses)}
-            onChange={(selected: { label: string; value: string }[]) => {
-              const values = selected.map((s) => s.value);
-              setSelectedAssetClasses(values);
-              setAssetClassFilter(values.length > 0 ? values : null);
-            }}
+            options={assetClassOptions}
+            value={assetClassValue}
+            onChange={handleAssetClassChange}
             labelledBy="Select Asset Classes"
           />
         </div>
 
-        {/* Market Filter */}
         <div style={{ flex: 1 }}>
           <label>Market:</label>
           <MultiSelect
-            options={toOptions(markets)}
-            value={toOptions(selectedMarkets)}
-            onChange={(selected: { label: string; value: string }[]) => {
-              const values = selected.map((s) => s.value);
-              setSelectedMarkets(values);
-              setMarketFilter(values.length > 0 ? values : null);
-            }}
+            options={marketOptions}
+            value={marketValue}
+            onChange={handleMarketChange}
             labelledBy="Select Markets"
           />
         </div>
 
-        {/* Alert Type Filter */}
         <div style={{ flex: 1 }}>
           <label>Alert Type:</label>
           <MultiSelect
-            options={toOptions(alertTypes)}
-            value={toOptions(selectedAlertTypes)}
-            onChange={(selected: { label: string; value: string }[]) => {
-              const values = selected.map((s) => s.value);
-              setSelectedAlertTypes(values);
-              setAlertTypeFilter(values.length > 0 ? values : null);
-            }}
+            options={alertTypeOptions}
+            value={alertTypeValue}
+            onChange={handleAlertTypeChange}
             labelledBy="Select Alert Types"
           />
         </div>
       </div>
 
-      {alerts.length === 0 ? (
-        <div>No alerts for current selection.</div>
-      ) : (
-        <ul style={{ marginTop: "1rem" }}>
-          {alerts.map((a, idx) => (
-            <li key={idx}>
-              <strong>{a.market}</strong> (
-              {new Date(a.timestamp).toLocaleDateString()}): {a.message}
-            </li>
-          ))}
-        </ul>
-      )}
+      <div style={{ marginTop: "1rem", maxHeight: "250px", overflowY: "auto" }}>
+        {alerts.length === 0 ? (
+          <div>No alerts for current selection.</div>
+        ) : (
+          <ul style={{ margin: 0, paddingLeft: "1.25rem" }}>
+            {alerts.map((alert, idx) => (
+              <li key={`${alert.timestamp}-${alert.alert_type}-${idx}`}>
+                <strong>{alert.market ?? "Unknown market"}</strong> (
+                {new Date(alert.timestamp).toLocaleDateString()}): {alert.message}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }
 
 export default AlertsPanel;
-
-
