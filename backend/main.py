@@ -95,6 +95,39 @@ def get_market_data(market_name: str, db: Session = Depends(get_db)):
         )
     return result
 
+from typing import Optional
+
+@app.get("/alerts")
+def get_all_alerts(
+    db: Session = Depends(get_db),
+    asset_class: Optional[str] = None,
+    market: Optional[str] = None,
+    alert_type: Optional[str] = None,
+):
+    # Get all alerts
+    query = db.query(models.Alert).order_by(models.Alert.timestamp.desc())
+
+    if asset_class:
+        query = query.filter(models.Alert.asset_class == asset_class)
+    if market:
+        query = query.filter(models.Alert.market == market)
+    if alert_type:
+        query = query.filter(models.Alert.alert_type == alert_type)
+
+    alerts = query.all()
+
+    # Convert alerts to a list of dictionaries
+    alert_list = []
+    for alert in alerts:
+        alert_list.append({
+            "timestamp": alert.timestamp.isoformat(),
+            "alert_type": alert.alert_type,
+            "message": alert.message,
+            "value": alert.value,
+        })
+
+    return alert_list
+
 @app.get("/alerts/{market_name}")
 def get_market_alerts(market_name: str, db: Session = Depends(get_db)):
 # Find market row by name
