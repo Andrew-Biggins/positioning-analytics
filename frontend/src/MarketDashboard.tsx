@@ -205,8 +205,14 @@ function MarketDashboard() {
       : null;
 
   const filteredAlerts = useMemo(() => {
+    const validMarkets = new Set(allMarkets);
+
     return alerts.filter((alert) => {
-      const alertAssetClass = alert.market ? marketToAssetClass[alert.market] : undefined;
+      if (!alert.market || !validMarkets.has(alert.market)) {
+        return false;
+      }
+
+      const alertAssetClass = marketToAssetClass[alert.market];
 
       const assetClassMatch =
         !effectiveAssetFilter ||
@@ -221,13 +227,7 @@ function MarketDashboard() {
 
       return assetClassMatch && marketMatch && alertTypeMatch;
     });
-  }, [
-    alerts,
-    effectiveAssetFilter,
-    effectiveMarketFilter,
-    effectiveAlertTypeFilter,
-    marketToAssetClass,
-  ]);
+  }, [alerts, effectiveAssetFilter, effectiveMarketFilter, effectiveAlertTypeFilter, marketToAssetClass, allMarkets]);
 
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
